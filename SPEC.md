@@ -14,10 +14,11 @@ Goal tracking application, but with attitude to be less boring and pressury.
   - getting going
   - almost there
   - yayyyyyyy
+- no deadlines
 - silently hide old unmet goals (archive page)
 
 
-### Business
+### Business (silly)
 
 - Businessy greeting
 - stages
@@ -26,6 +27,19 @@ Goal tracking application, but with attitude to be less boring and pressury.
   - telling your boss it's almost done
   - it's actually almost done
   - eh good enough
+- soft deadlines (no difference, just language)
+- formal question to deal with unmet goals
+
+### Serious
+
+- Formal greeting
+- stages
+  - in queue
+  - started
+  - in progress
+  - finishing touches
+  - completed
+- hard deadlines
 - formal question to deal with unmet goals
 
 ### Mean
@@ -37,6 +51,7 @@ Goal tracking application, but with attitude to be less boring and pressury.
   - hey you actually did something
   - you're not done yet?
   - oh finally, jeez
+- very mean about deadlines (bold, red, green, etc.)
 - nag about unmet goals angrily
 
 ### Just colors
@@ -48,6 +63,7 @@ Goal tracking application, but with attitude to be less boring and pressury.
   - blue
   - lime
   - green
+- no deadlines
 - new color for umet goals
 
 ### Boring
@@ -59,10 +75,14 @@ Goal tracking application, but with attitude to be less boring and pressury.
   - stage 3
   - stage 4
   - stage 5
+- gray deadlines
 - [generic]
 
 ### Custom?
-
+- greeting
+- stages
+- deadlines
+- unmet goal behavior
 
 
 ## Features
@@ -70,6 +90,9 @@ Goal tracking application, but with attitude to be less boring and pressury.
 - [ ] Setting of sassiness mode, global default and per-category
 - [ ] Categories of goals
 - [ ] User auth with webauthn
+- [ ] Light and Dark mode
+- [ ] Font options
+- [ ] optional deadlines
 - [ ] CRUD
   - [ ] update changing stage of thing (number)
   - [ ] update name of thing
@@ -95,6 +118,7 @@ Goal tracking application, but with attitude to be less boring and pressury.
   - description
   - stage
   - category id (index)
+  - optional deadline
 - Sassiness (auto create builtins, maybe memoize somehow?)
   - name
   - user id (index, optional)
@@ -102,6 +126,10 @@ Goal tracking application, but with attitude to be less boring and pressury.
   - stages [num => word, color]
   - greeting
   - unmet goal behavior
+  - deadline options
 
 
 
+## Other stuff
+
+- [ ] good timezone support
