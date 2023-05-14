@@ -10,7 +10,6 @@ Goal tracking application, but with attitude to be less boring and pressury.
 - Kind greeting
 - stages
   - had an idea
-  - thinkin about it
   - getting going
   - almost there
   - yayyyyyyy
@@ -23,7 +22,6 @@ Goal tracking application, but with attitude to be less boring and pressury.
 - Businessy greeting
 - stages
   - brainstorming
-  - synergizing
   - telling your boss it's almost done
   - it's actually almost done
   - eh good enough
@@ -35,7 +33,6 @@ Goal tracking application, but with attitude to be less boring and pressury.
 - Formal greeting
 - stages
   - in queue
-  - started
   - in progress
   - finishing touches
   - completed
@@ -46,7 +43,6 @@ Goal tracking application, but with attitude to be less boring and pressury.
 
 - Hostile greeting
 - stages
-  - you haven't started yet
   - get to work lazy
   - hey you actually did something
   - you're not done yet?
@@ -61,7 +57,6 @@ Goal tracking application, but with attitude to be less boring and pressury.
   - red
   - yellow
   - blue
-  - lime
   - green
 - no deadlines
 - new color for umet goals
@@ -74,7 +69,6 @@ Goal tracking application, but with attitude to be less boring and pressury.
   - stage 2
   - stage 3
   - stage 4
-  - stage 5
 - gray deadlines
 - [generic]
 
@@ -107,14 +101,15 @@ Goal tracking application, but with attitude to be less boring and pressury.
 - Credentials (check polls project for sql)
   - id
   - credential
-- Categories
+- Group
   - name
   - description
   - user id
   - association to goals (preload)
   - sassiness id
+  - icon?
 - Goals
-  - name
+  - title
   - description
   - stage
   - category id (index)
