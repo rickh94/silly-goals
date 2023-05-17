@@ -1,0 +1,610 @@
+{
+  "db": "PostgreSQL",
+  "46633d2c3337230156ad54b06300cf2c05ca421814d279d603ce4fd55a1c05d2": {
+    "describe": {
+      "columns": [
+        {
+          "name": "count",
+          "ordinal": 0,
+          "type_info": "Int8"
+        }
+      ],
+      "nullable": [
+        null
+      ],
+      "parameters": {
+        "Left": [
+          "Text"
+        ]
+      }
+    },
+    "query": "SELECT COUNT(id)\n            FROM users\n            WHERE email\n            ILIKE $1"
+  },
+  "6121c5014a49a011a789418e4eea8b0daa9b8ca1cb1ca080932eb37660820850": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int8"
+        },
+        {
+          "name": "userid",
+          "ordinal": 1,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "name",
+          "ordinal": 2,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "email",
+          "ordinal": 3,
+          "type_info": "Varchar"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        true,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Text"
+        ]
+      }
+    },
+    "query": "SELECT * FROM users WHERE userid = $1;"
+  },
+  "706181a3a73fcb8f31156e97f7a3b48fbbfeb88b97448f17ce65de752949dab0": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int8"
+        },
+        {
+          "name": "userid",
+          "ordinal": 1,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "name",
+          "ordinal": 2,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "email",
+          "ordinal": 3,
+          "type_info": "Varchar"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        true,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Varchar",
+          "Varchar",
+          "Varchar"
+        ]
+      }
+    },
+    "query": "INSERT INTO users(name, email, userid) VALUES ($1, $2, $3) RETURNING *;"
+  },
+  "7c2448a9a782f19b1d703d493e8e8056abf98de6cdba9f2b9d1e7800ce72b440": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int8"
+        },
+        {
+          "name": "email",
+          "ordinal": 1,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "name",
+          "ordinal": 2,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "userid",
+          "ordinal": 3,
+          "type_info": "Varchar"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        true,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Text"
+        ]
+      }
+    },
+    "query": "SELECT id, email, name, userid FROM users WHERE email = $1"
+  },
+  "7cc41bb17225e1c0fbddfc7230a733a9e19e25f43e20cbf13bd5479bd9f20877": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int8"
+        },
+        {
+          "name": "title",
+          "ordinal": 1,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "description",
+          "ordinal": 2,
+          "type_info": "Text"
+        },
+        {
+          "name": "user_id",
+          "ordinal": 3,
+          "type_info": "Int8"
+        },
+        {
+          "name": "tone_id",
+          "ordinal": 4,
+          "type_info": "Int8"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        true,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Varchar",
+          "Text",
+          "Int8",
+          "Int8"
+        ]
+      }
+    },
+    "query": "INSERT INTO groups(title, description, tone_id, user_id) \n        VALUES ($1, $2, $3, $4) \n        RETURNING *;"
+  },
+  "7fdb76cf1a9e642f5aec4aba13dc7848fbe0ac996c2296a9797acd6c5d460b9f": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int8"
+        },
+        {
+          "name": "userid",
+          "ordinal": 1,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "name",
+          "ordinal": 2,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "email",
+          "ordinal": 3,
+          "type_info": "Varchar"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        true,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Text"
+        ]
+      }
+    },
+    "query": "SELECT * FROM users WHERE userid = $1"
+  },
+  "8ddd86810955ce7c3cf94d983ec5529d8519b6b787c107b2a633086d6cd35807": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int8"
+        },
+        {
+          "name": "userid",
+          "ordinal": 1,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "name",
+          "ordinal": 2,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "email",
+          "ordinal": 3,
+          "type_info": "Varchar"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        true,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Varchar",
+          "Varchar"
+        ]
+      }
+    },
+    "query": "INSERT INTO users(email, userid)\n            VALUES ($1, $2)\n            RETURNING *;"
+  },
+  "a1ab02e0cce4a502a620e0898bdbf4078e79fd9ebb07cb9f5863b891978e4932": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int8"
+        },
+        {
+          "name": "title",
+          "ordinal": 1,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "description",
+          "ordinal": 2,
+          "type_info": "Text"
+        },
+        {
+          "name": "stage",
+          "ordinal": 3,
+          "type_info": "Int2"
+        },
+        {
+          "name": "group_id",
+          "ordinal": 4,
+          "type_info": "Int8"
+        },
+        {
+          "name": "deadline",
+          "ordinal": 5,
+          "type_info": "Date"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        true,
+        false,
+        false,
+        true
+      ],
+      "parameters": {
+        "Left": [
+          "Int8"
+        ]
+      }
+    },
+    "query": "SELECT * FROM goals WHERE group_id = $1;"
+  },
+  "a4e125ac278a7c9f0ca042d613f1c6b0adec7044c4d4927bfa176a2cb3688a03": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int8"
+        },
+        {
+          "name": "name",
+          "ordinal": 1,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "stages",
+          "ordinal": 2,
+          "type_info": "TextArray"
+        },
+        {
+          "name": "deadline: DeadlineType",
+          "ordinal": 3,
+          "type_info": {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "off",
+                  "soft",
+                  "hard"
+                ]
+              },
+              "name": "deadline_type"
+            }
+          }
+        },
+        {
+          "name": "global",
+          "ordinal": 4,
+          "type_info": "Bool"
+        },
+        {
+          "name": "greeting",
+          "ordinal": 5,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "unmet_behavior: GoalBehavior",
+          "ordinal": 6,
+          "type_info": {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "hide",
+                  "nice",
+                  "mean"
+                ]
+              },
+              "name": "goal_behavior"
+            }
+          }
+        },
+        {
+          "name": "user_id",
+          "ordinal": 7,
+          "type_info": "Int8"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Int8"
+        ]
+      }
+    },
+    "query": "SELECT \n        id, name, stages, deadline as \"deadline: DeadlineType\", global, \n        greeting, unmet_behavior as \"unmet_behavior: GoalBehavior\", user_id \n        FROM tones \n        WHERE global = 'true' OR user_id = $1;"
+  },
+  "c40531eecd94fe531ef5a5b7729930eabf9bf3691e4a36468adb00fd9c18c56d": {
+    "describe": {
+      "columns": [
+        {
+          "name": "title",
+          "ordinal": 0,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "description",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "tone_name",
+          "ordinal": 2,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "tone_stages",
+          "ordinal": 3,
+          "type_info": "TextArray"
+        },
+        {
+          "name": "greeting",
+          "ordinal": 4,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "unmet_behavior: GoalBehavior",
+          "ordinal": 5,
+          "type_info": {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "hide",
+                  "nice",
+                  "mean"
+                ]
+              },
+              "name": "goal_behavior"
+            }
+          }
+        },
+        {
+          "name": "deadline: DeadlineType",
+          "ordinal": 6,
+          "type_info": {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "off",
+                  "soft",
+                  "hard"
+                ]
+              },
+              "name": "deadline_type"
+            }
+          }
+        }
+      ],
+      "nullable": [
+        false,
+        true,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Int8",
+          "Int8"
+        ]
+      }
+    },
+    "query": "SELECT \n        g.title, \n        g.description, \n        t.name as tone_name, \n        t.stages as tone_stages, \n        t.greeting, \n        t.unmet_behavior as \"unmet_behavior: GoalBehavior\", \n        t.deadline as \"deadline: DeadlineType\"\n        FROM groups g\n        LEFT JOIN tones t\n        ON g.tone_id = t.id\n        WHERE g.user_id = $1 AND g.id = $2;"
+  },
+  "d6ce5de92d97057dfd160773d006f87fdbf170e8069019b7e80e07a9437b0258": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int8"
+        },
+        {
+          "name": "name",
+          "ordinal": 1,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "email",
+          "ordinal": 2,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "userid",
+          "ordinal": 3,
+          "type_info": "Varchar"
+        }
+      ],
+      "nullable": [
+        false,
+        true,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Text"
+        ]
+      }
+    },
+    "query": "SELECT id, name, email, userid FROM users WHERE email = $1"
+  },
+  "eb60e8aafa9eb665886a28d6b25b5462725a5dd3b297982c766cb1c651d9deea": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int8"
+        }
+      ],
+      "nullable": [
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Text"
+        ]
+      }
+    },
+    "query": "SELECT id FROM tones WHERE name = $1;"
+  },
+  "ebcfff278332c24a4187830ffd9cf8a051e2ed7d31e7785a9a1b663a4d254552": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int8"
+        },
+        {
+          "name": "name",
+          "ordinal": 1,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "userid",
+          "ordinal": 2,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "email",
+          "ordinal": 3,
+          "type_info": "Varchar"
+        }
+      ],
+      "nullable": [
+        false,
+        true,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Text"
+        ]
+      }
+    },
+    "query": "SELECT id, name, userid, email FROM users\n            WHERE userid = $1"
+  },
+  "f59997c25b304ba206ad34cd714012f1011cbe10638d142c573ca154bef58ec4": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int8"
+        },
+        {
+          "name": "userid",
+          "ordinal": 1,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "name",
+          "ordinal": 2,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "email",
+          "ordinal": 3,
+          "type_info": "Varchar"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        true,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Text"
+        ]
+      }
+    },
+    "query": "SELECT id, userid, name, email\n            FROM users\n            WHERE email = $1"
+  }
+}

@@ -7,3 +7,7 @@
 
 #/target
 .pids
+dump.rdb
+Secrets.toml
+Secrets.dev.toml
+

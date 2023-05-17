@@ -1,0 +1,56 @@
+{% extends "internal.html" %}
+{% block content %}
+<div class="divide-y divide-gray-200 overflow-hidden rounded-lg bg-white shadow">
+  <div class="px-4 py-5 sm:px-6">
+    <h1 class="font-bold text-2xl text-zinc-900">User Settings</h1>
+  </div>
+  <div class="px-4 py-5 sm:p-6">
+    <dl class="divide-y divide-gray-100">
+      <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4">
+        <dt class="text-sm font-medium leading-6 text-gray-900">Name</dt>
+        <dd class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">
+          {% if let Some(name) = user.name %}
+          {{ name }}
+          {% else %}
+          No Name
+          {% endif %}
+        </dd>
+      </div>
+      <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4">
+        <dt class="text-sm font-medium leading-6 text-gray-900">Email</dt>
+        <dd class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">{{ user.email }}</dd>
+      </div>
+      <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4">
+        <!-- TODO: add default silliness for user -->
+        <dt class="text-sm font-medium leading-6 text-gray-900">Default Silliness</dt>
+        <dd class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">Gentle</dd>
+      </div>
+      <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4">
+        <dt class="text-sm font-medium leading-6 text-gray-900">Passwordless Login</dt>
+        <dd class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">
+          <!-- TODO: implement this -->
+          <button type="button" x-data @click="alert('register')"
+            class="rounded-md bg-indigo-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">Register
+            This Device</button>
+        </dd>
+      </div>
+      <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4">
+        <dt class="text-sm font-medium leading-6 text-gray-900">Logout</dt>
+        <dd class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0 flex">
+          <a href="/logout"
+            class="rounded-md bg-amber-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-amber-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-600">Logout</a>
+        </dd>
+      </div>
+      <!-- TODO: implement this -->
+      <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4">
+        <dt class="text-sm font-medium leading-6 text-gray-900">Danger</dt>
+        <dd class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0 flex">
+          <button type="button" x-data @click="alert('confirm delete')"
+            class="rounded-md bg-rose-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-rose-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-600">Delete
+            My Account</button>
+        </dd>
+      </div>
+    </dl>
+  </div>
+</div>
+{% endblock content %}

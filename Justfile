@@ -4,8 +4,6 @@ start:
 		mkdir '.pids'
 	fi
 	pg_ctl status || pg_ctl start
-	mailhog &
-	echo $! > .pids/mailhog
 	caddy run --config $CADDYFILE &
 	echo $! > .pids/caddy
 	redis-server --port $REDIS_PORT &

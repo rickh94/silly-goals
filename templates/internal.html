@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block layout %}
+
+{% include "partials/_sidebar.html" %}
+<main class="py-10 lg:pl-72 px-4">
+  {% block content %}
+  {% endblock content %}
+
+</main>
+{% endblock layout %}

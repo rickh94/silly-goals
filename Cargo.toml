@@ -1,5 +1,5 @@
 [package]
-name = "sassy-goals"
+name = "silly-goals"
 version = "0.1.0"
 edition = "2021"
 publish = false
@@ -8,7 +8,9 @@ publish = false
 
 [dependencies]
 shuttle-runtime = "0.16"
-actix-web = "4.3"
+shuttle-shared-db = { version = "0.16", features = ["postgres"]}
+shuttle-secrets = "0.16"
+actix-web = {version = "4.3", features = ["rustls", "compress-brotli", "compress-zstd", "cookies"]}
 actix-web-static-files = "4.0"
 static-files = "0.2"
 shuttle-actix-web = "0.16"
@@ -16,6 +18,23 @@ tokio = "1.28"
 askama = "0.12"
 thiserror = "1.0"
 askama_actix = "0.14"
+sqlx = { version = "0.6", features = ["runtime-tokio-native-tls", "postgres", "macros", "json", "chrono", "offline"]}
+lettre = { version = "0.10.2", features = [
+  "smtp-transport",
+  "tokio1",
+  "tokio1-native-tls",
+] }
+actix-identity = "0.5.2"
+actix-session = { version = "0.7.2", features = ["redis-actor-session"] }
+actix-redis = "0.12.0"
+webauthn-rs = { version = "0.4.8", features = [
+  "danger-allow-state-serialisation",
+] }
+serde = "1.0"
+rand = "0.8"
+base64 = "0.21"
+anyhow = "1.0"
+nanoid = "0.4"
 
 [build-dependencies]
 static-files = "0.2"

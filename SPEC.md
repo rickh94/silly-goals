@@ -1,4 +1,4 @@
-# Sassy Goals
+# Silly Goals
 
 Goal tracking application, but with attitude to be less boring and pressury.
 
@@ -97,24 +97,24 @@ Goal tracking application, but with attitude to be less boring and pressury.
   - ids
   - unique nanoid (index)
   - email address
-  - credential ids
 - Credentials (check polls project for sql)
   - id
   - credential
+  - user_id
 - Group
   - name
   - description
   - user id
   - association to goals (preload)
   - sassiness id
-  - icon?
+   icon?
 - Goals
   - title
   - description
   - stage
   - category id (index)
   - optional deadline
-- Sassiness (auto create builtins, maybe memoize somehow?)
+- Tone (auto create builtins, maybe memoize somehow?)
   - name
   - user id (index, optional)
   - global (bool) 
