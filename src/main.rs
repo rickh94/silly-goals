@@ -1,5 +1,5 @@
 use actix_identity::IdentityMiddleware;
-use actix_session::{storage::RedisActorSessionStore, SessionMiddleware};
+use actix_session::{storage::RedisSessionStore, SessionMiddleware};
 use actix_web::{cookie::Key, get, middleware::Compress, web, web::ServiceConfig, Responder};
 use actix_web_static_files::ResourceFiles;
 use askama_actix::Template;
@@ -111,15 +111,16 @@ async fn actix_web(
         .await
         .expect("Failed to connect to smtp server");
 
+    let redis_store = RedisSessionStore::new(redis_uri)
+        .await
+        .expect("to connect to redis store");
+
     let config = move |cfg: &mut ServiceConfig| {
         let generated = generate();
         cfg.service(ResourceFiles::new("/static", generated))
             .service(
                 web::scope("")
-                    .wrap(SessionMiddleware::new(
-                        RedisActorSessionStore::new(redis_uri),
-                        secret_key.clone(),
-                    ))
+                    .wrap(SessionMiddleware::new(redis_store, secret_key.clone()))
                     .wrap(IdentityMiddleware::default())
                     .wrap(Compress::default())
                     .app_data(web::Data::new(pool.clone()))

@@ -25,7 +25,7 @@ lettre = { version = "0.10.2", features = [
   "tokio1-native-tls",
 ] }
 actix-identity = "0.5.2"
-actix-session = { version = "0.7.2", features = ["redis-actor-session"] }
+actix-session = { version = "0.7.2", features = ["redis-rs-session", "redis-rs-tls-session"] }
 actix-redis = "0.12.0"
 webauthn-rs = { version = "0.4.8", features = [
   "danger-allow-state-serialisation",
