@@ -86,6 +86,7 @@ pub struct Group {
 
 #[derive(Clone, Debug)]
 pub struct GroupDisplay {
+    pub id: i64,
     pub title: String,
     pub description: Option<String>,
     pub tone_name: String,

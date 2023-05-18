@@ -1,19 +1,22 @@
 <!-- TODO: actually display real data -->
 <h2 class="font-bold text-3xl mb-4 mx-4  text-zinc-800">Goal Groups</h2>
 <ul role="list" class="pl-4 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+  {% for group in groups %}
   <li class="col-span-1 divide-y divide-zinc-200 rounded-lg bg-white border-indigo-200 border shadow">
     <div class="flex w-full items-center justify-between space-x-6 p-6">
       <div class="flex-1 truncate">
         <div class="flex items-center space-x-3">
-          <h3 class="truncate text-sm font-medium text-zinc-900">Psychological Goals</h3>
+          <h3 class="truncate text-sm font-medium text-zinc-900">{{ group.title }}</h3>
         </div>
-        <p class="mt-1 truncate text-sm text-zinc-500">Goals for personal and psychological health</p>
+        {% if let Some(desc) = group.description %}
+        <p class="mt-1 truncate text-sm text-zinc-500">{{ desc }}</p>
+        {% endif %}
       </div>
     </div>
     <div>
       <div class="-mt-px flex divide-x divide-zinc-200">
         <div class="flex w-0 flex-1">
-          <a href="#" x-data @click="alert('settings')"
+          <a href="#" x-data @click="alert('todo')"
             class="bg-pink-600 relative -mr-px inline-flex w-0 flex-1 items-center justify-center gap-x-3 rounded-bl-lg border border-transparent py-2 text-sm font-semibold text-zinc-100">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
               class="h-5 w-5 text-zinc-50">
@@ -24,7 +27,7 @@
           </a>
         </div>
         <div class="-ml-px flex w-0 flex-1">
-          <a href="#" x-data @click="alert('view')"
+          <a href="/groups/{{ group.id }}"
             class="relative bg-indigo-600 text-white inline-flex w-0 flex-1 items-center justify-center gap-x-3 rounded-br-lg border border-transparent py-4 text-sm font-semibold">
 
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
@@ -38,79 +41,9 @@
       </div>
     </div>
   </li>
-  <li class="col-span-1 divide-y divide-zinc-200 rounded-lg border-indigo-200 border bg-white shadow">
-    <div class="flex w-full items-center justify-between space-x-6 p-6">
-      <div class="flex-1 truncate">
-        <div class="flex items-center space-x-3">
-          <h3 class="truncate text-sm font-medium text-zinc-900">Work Goals</h3>
-        </div>
-        <p class="mt-1 truncate text-sm text-zinc-500">Goals for my Job</p>
-      </div>
-    </div>
-    <div>
-      <div class="-mt-px flex divide-x divide-zinc-200">
-        <div class="flex w-0 flex-1">
-          <a href="#" x-data @click="alert('settings')"
-            class="bg-pink-600 relative -mr-px inline-flex w-0 flex-1 items-center justify-center gap-x-3 rounded-bl-lg border border-transparent py-2 text-sm font-semibold text-zinc-100">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
-              class="h-5 w-5 text-zinc-50">
-              <path
-                d="M18.75 12.75h1.5a.75.75 0 000-1.5h-1.5a.75.75 0 000 1.5zM12 6a.75.75 0 01.75-.75h7.5a.75.75 0 010 1.5h-7.5A.75.75 0 0112 6zM12 18a.75.75 0 01.75-.75h7.5a.75.75 0 010 1.5h-7.5A.75.75 0 0112 18zM3.75 6.75h1.5a.75.75 0 100-1.5h-1.5a.75.75 0 000 1.5zM5.25 18.75h-1.5a.75.75 0 010-1.5h1.5a.75.75 0 010 1.5zM3 12a.75.75 0 01.75-.75h7.5a.75.75 0 010 1.5h-7.5A.75.75 0 013 12zM9 3.75a2.25 2.25 0 100 4.5 2.25 2.25 0 000-4.5zM12.75 12a2.25 2.25 0 114.5 0 2.25 2.25 0 01-4.5 0zM9 15.75a2.25 2.25 0 100 4.5 2.25 2.25 0 000-4.5z" />
-            </svg>
-            Options
-          </a>
-        </div>
-        <div class="-ml-px flex w-0 flex-1">
-          <a href="#" x-data @click="alert('view')"
-            class="relative bg-indigo-600 text-white inline-flex w-0 flex-1 items-center justify-center gap-x-3 rounded-br-lg border border-transparent py-4 text-sm font-semibold">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
-              class="h-5 w-5 text-zinc-50">
-              <path
-                d="M15 3.75H9v16.5h6V3.75zM16.5 20.25h3.375c1.035 0 1.875-.84 1.875-1.875V5.625c0-1.036-.84-1.875-1.875-1.875H16.5v16.5zM4.125 3.75H7.5v16.5H4.125a1.875 1.875 0 01-1.875-1.875V5.625c0-1.036.84-1.875 1.875-1.875z" />
-            </svg>
-            View
-          </a>
-        </div>
-      </div>
-    </div>
-  </li>
-  <li class="col-span-1 divide-y divide-zinc-200 rounded-lg bg-white border-indigo-200 border shadow">
-    <div class="flex w-full items-center justify-between space-x-6 p-6">
-      <div class="flex-1 truncate">
-        <div class="flex items-center space-x-3">
-          <h3 class="truncate text-sm font-medium text-zinc-900">Reading List</h3>
-        </div>
-        <p class="mt-1 truncate text-sm text-zinc-500">Goals for personal and psychological health</p>
-      </div>
-    </div>
-    <div>
-      <div class="-mt-px flex divide-x divide-zinc-200">
-        <div class="flex w-0 flex-1">
-          <a href="#" x-data @click="alert('settings')"
-            class="bg-pink-600 relative -mr-px inline-flex w-0 flex-1 items-center justify-center gap-x-3 rounded-bl-lg border border-transparent py-2 text-sm font-semibold text-zinc-100">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
-              class="h-5 w-5 text-zinc-50">
-              <path
-                d="M18.75 12.75h1.5a.75.75 0 000-1.5h-1.5a.75.75 0 000 1.5zM12 6a.75.75 0 01.75-.75h7.5a.75.75 0 010 1.5h-7.5A.75.75 0 0112 6zM12 18a.75.75 0 01.75-.75h7.5a.75.75 0 010 1.5h-7.5A.75.75 0 0112 18zM3.75 6.75h1.5a.75.75 0 100-1.5h-1.5a.75.75 0 000 1.5zM5.25 18.75h-1.5a.75.75 0 010-1.5h1.5a.75.75 0 010 1.5zM3 12a.75.75 0 01.75-.75h7.5a.75.75 0 010 1.5h-7.5A.75.75 0 013 12zM9 3.75a2.25 2.25 0 100 4.5 2.25 2.25 0 000-4.5zM12.75 12a2.25 2.25 0 114.5 0 2.25 2.25 0 01-4.5 0zM9 15.75a2.25 2.25 0 100 4.5 2.25 2.25 0 000-4.5z" />
-            </svg>
-            Options
-          </a>
-        </div>
-        <div class="-ml-px flex w-0 flex-1">
-          <a href="#" x-data @click="alert('view')"
-            class="relative bg-indigo-600 text-white inline-flex w-0 flex-1 items-center justify-center gap-x-3 rounded-br-lg border border-transparent py-4 text-sm font-semibold">
-
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-5 w-5 text-white">
-              <path
-                d="M15 3.75H9v16.5h6V3.75zM16.5 20.25h3.375c1.035 0 1.875-.84 1.875-1.875V5.625c0-1.036-.84-1.875-1.875-1.875H16.5v16.5zM4.125 3.75H7.5v16.5H4.125a1.875 1.875 0 01-1.875-1.875V5.625c0-1.036.84-1.875 1.875-1.875z" />
-            </svg>
-            View
-          </a>
-        </div>
-      </div>
-    </div>
-  </li>
-  <li class="col-span-1 divide-y divide-zinc-200 rounded-lg bg-white border-indigo-400 border text-indigo-600">
+  {% endfor %}
+  <li
+    class="col-span-1 divide-y divide-zinc-200 rounded-lg bg-white border-indigo-400 border border-dashed text-indigo-600">
     <a href="/groups/new" class="h-full w-full flex justify-between items-center p-6">
       <div class="flex-col flex">
         <div class="flex items-center space-x-2">

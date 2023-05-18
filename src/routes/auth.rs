@@ -109,10 +109,14 @@ async fn post_register(
         &format!("Use code {login_code} to confirm your new account and log in."),
     )?;
 
-    mailer.send(message).await.map_err(|err| {
-        error!("Could not send registration email, {}", err);
-        ErrorInternalServerError(err)
-    })?;
+    tokio::spawn(async move {
+        match mailer.send(message).await {
+            Ok(_) => (),
+            Err(e) => {
+                error!("Failed to send message: {}", e);
+            }
+        }
+    });
 
     let csrf_token = CsrfToken::get_or_create(&session)?;
 
@@ -321,10 +325,14 @@ async fn post_login(
         &format!("Use code {login_code} to log in to your account."),
     )?;
 
-    mailer.send(message).await.map_err(|err| {
-        error!("Could not send login email, {}", err);
-        ErrorInternalServerError(err)
-    })?;
+    tokio::spawn(async move {
+        match mailer.send(message).await {
+            Ok(_) => (),
+            Err(e) => {
+                error!("Could not sent message: {}", e);
+            }
+        }
+    });
 
     Ok(HttpResponse::Ok().body(body))
 }

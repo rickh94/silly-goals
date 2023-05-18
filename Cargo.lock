@@ -3,29 +3,6 @@
 version = 3
 
 [[package]]
-name = "actix"
-version = "0.13.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f728064aca1c318585bf4bb04ffcfac9e75e508ab4e8b1bd9ba5dfe04e2cbed5"
-dependencies = [
- "actix-rt",
- "bitflags",
- "bytes",
- "crossbeam-channel",
- "futures-core",
- "futures-sink",
- "futures-task",
- "futures-util",
- "log",
- "once_cell",
- "parking_lot 0.12.1",
- "pin-project-lite",
- "smallvec",
- "tokio",
- "tokio-util",
-]
-
-[[package]]
 name = "actix-codec"
 version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -106,27 +83,6 @@ checksum = "465a6172cf69b960917811022d8f29bc0b7fa1398bc4f78b3c466673db1213b6"
 dependencies = [
  "quote",
  "syn 1.0.109",
-]
-
-[[package]]
-name = "actix-redis"
-version = "0.12.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "38446dc11c743f4f0023b1067c7cfb8f2548f24418e31a193b324e35fa059279"
-dependencies = [
- "actix",
- "actix-rt",
- "actix-service",
- "actix-tls",
- "actix-web",
- "backoff",
- "derive_more",
- "futures-core",
- "log",
- "redis-async",
- "time",
- "tokio",
- "tokio-util",
 ]
 
 [[package]]
@@ -633,17 +589,6 @@ dependencies = [
  "rustversion",
  "tower-layer",
  "tower-service",
-]
-
-[[package]]
-name = "backoff"
-version = "0.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b62ddb9cb1ec0a098ad4bbf9344d0713fa193ae1a80af55febcff2627b6a00c1"
-dependencies = [
- "getrandom",
- "instant",
- "rand",
 ]
 
 [[package]]
@@ -2467,19 +2412,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "redis-async"
-version = "0.13.0"
+name = "redis_rs"
+version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2777130e406c74c28b6cddc0194fcdc2553b5a8795eef9f6384bd3b70a07ba3f"
-dependencies = [
- "bytes",
- "futures-channel",
- "futures-sink",
- "futures-util",
- "log",
- "tokio",
- "tokio-util",
-]
+checksum = "44e5387dc28a58b9bc0a51acf7838610f459dea43335f9bc1f198882ff633304"
 
 [[package]]
 name = "redox_syscall"
@@ -2953,7 +2889,6 @@ name = "silly-goals"
 version = "0.1.0"
 dependencies = [
  "actix-identity",
- "actix-redis",
  "actix-session",
  "actix-web",
  "actix-web-static-files",
@@ -2964,6 +2899,7 @@ dependencies = [
  "lettre",
  "nanoid",
  "rand",
+ "redis_rs",
  "serde",
  "shuttle-actix-web",
  "shuttle-runtime",

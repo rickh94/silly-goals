@@ -5,6 +5,7 @@ use actix_web_static_files::ResourceFiles;
 use askama_actix::Template;
 use lettre::{transport::smtp::authentication::Credentials, AsyncSmtpTransport, Tokio1Executor};
 use shuttle_actix_web::ShuttleActixWeb;
+use shuttle_runtime::tracing::info;
 use shuttle_secrets::SecretStore;
 use silly_goals::{
     routes::{auth, dashboard},
@@ -49,6 +50,7 @@ async fn actix_web(
     )] pool: PgPool,
     #[shuttle_secrets::Secrets] secret_store: SecretStore,
 ) -> ShuttleActixWeb<impl FnOnce(&mut ServiceConfig) + Send + Clone + 'static> {
+    info!("Running migrations");
     sqlx::migrate!("./migrations")
         .run(&pool)
         .await
@@ -60,6 +62,7 @@ async fn actix_web(
             )
         })?;
 
+    info!("Seeding Database");
     seed_db(&pool).await;
 
     let redis_uri = secret_store
@@ -106,21 +109,27 @@ async fn actix_web(
             .credentials(creds)
             .build();
 
+    info!("Testing mailer");
     mailer
         .test_connection()
         .await
         .expect("Failed to connect to smtp server");
 
+    info!("Connecting to redis");
     let redis_store = RedisSessionStore::new(redis_uri)
         .await
         .expect("to connect to redis store");
 
+    info!("Building server config");
     let config = move |cfg: &mut ServiceConfig| {
         let generated = generate();
         cfg.service(ResourceFiles::new("/static", generated))
             .service(
                 web::scope("")
-                    .wrap(SessionMiddleware::new(redis_store, secret_key.clone()))
+                    .wrap(SessionMiddleware::new(
+                        redis_store.clone(),
+                        secret_key.clone(),
+                    ))
                     .wrap(IdentityMiddleware::default())
                     .wrap(Compress::default())
                     .app_data(web::Data::new(pool.clone()))
@@ -138,6 +147,11 @@ async fn actix_web(
                     .service(dashboard::new_group)
                     .service(dashboard::post_new_group)
                     .service(dashboard::get_group)
+                    .service(dashboard::new_goal)
+                    .service(dashboard::post_new_goal)
+                    .service(dashboard::get_goal)
+                    .service(dashboard::edit_goal)
+                    .service(dashboard::post_edit_goal)
                     .service(index),
             );
     };

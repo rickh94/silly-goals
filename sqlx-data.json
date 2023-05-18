@@ -1,5 +1,103 @@
 {
   "db": "PostgreSQL",
+  "0f66d0344abba6546e2af91103c480fad1cb05e85eba53c6ecb3060cdc8a7a43": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int8"
+        },
+        {
+          "name": "title",
+          "ordinal": 1,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "description",
+          "ordinal": 2,
+          "type_info": "Text"
+        },
+        {
+          "name": "stage",
+          "ordinal": 3,
+          "type_info": "Int2"
+        },
+        {
+          "name": "group_id",
+          "ordinal": 4,
+          "type_info": "Int8"
+        },
+        {
+          "name": "deadline",
+          "ordinal": 5,
+          "type_info": "Date"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        true,
+        false,
+        false,
+        true
+      ],
+      "parameters": {
+        "Left": [
+          "Varchar",
+          "Text",
+          "Int2",
+          "Date",
+          "Int8"
+        ]
+      }
+    },
+    "query": "INSERT INTO goals(title, description, stage, deadline, group_id) \n        VALUES ($1, $2, $3, $4, $5)\n        RETURNING *;"
+  },
+  "44717960af68304e4b99dd1035562afe83e862dcea996832b2afdcca2dfec88e": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int8"
+        },
+        {
+          "name": "title",
+          "ordinal": 1,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "description",
+          "ordinal": 2,
+          "type_info": "Text"
+        },
+        {
+          "name": "user_id",
+          "ordinal": 3,
+          "type_info": "Int8"
+        },
+        {
+          "name": "tone_id",
+          "ordinal": 4,
+          "type_info": "Int8"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        true,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Int8"
+        ]
+      }
+    },
+    "query": "SELECT * FROM groups WHERE user_id = $1"
+  },
   "46633d2c3337230156ad54b06300cf2c05ca421814d279d603ce4fd55a1c05d2": {
     "describe": {
       "columns": [
@@ -260,6 +358,136 @@
     },
     "query": "INSERT INTO users(email, userid)\n            VALUES ($1, $2)\n            RETURNING *;"
   },
+  "97d713d152586bb541e3c362d8bc92e9efc33174ad054330977cf1bdb47407da": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int8"
+        },
+        {
+          "name": "title",
+          "ordinal": 1,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "description",
+          "ordinal": 2,
+          "type_info": "Text"
+        },
+        {
+          "name": "user_id",
+          "ordinal": 3,
+          "type_info": "Int8"
+        },
+        {
+          "name": "tone_id",
+          "ordinal": 4,
+          "type_info": "Int8"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        true,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Int8",
+          "Int8"
+        ]
+      }
+    },
+    "query": "SELECT * FROM groups \n        WHERE user_id = $1 AND id = $2;"
+  },
+  "98704df02da327862abe0de3605149cac392ad37b03aa3bdd4e45f8c25184ded": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int8"
+        },
+        {
+          "name": "title",
+          "ordinal": 1,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "description",
+          "ordinal": 2,
+          "type_info": "Text"
+        },
+        {
+          "name": "tone_name",
+          "ordinal": 3,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "tone_stages",
+          "ordinal": 4,
+          "type_info": "TextArray"
+        },
+        {
+          "name": "greeting",
+          "ordinal": 5,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "unmet_behavior: GoalBehavior",
+          "ordinal": 6,
+          "type_info": {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "hide",
+                  "nice",
+                  "mean"
+                ]
+              },
+              "name": "goal_behavior"
+            }
+          }
+        },
+        {
+          "name": "deadline: DeadlineType",
+          "ordinal": 7,
+          "type_info": {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "off",
+                  "soft",
+                  "hard"
+                ]
+              },
+              "name": "deadline_type"
+            }
+          }
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        true,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Int8",
+          "Int8"
+        ]
+      }
+    },
+    "query": "SELECT \n        g.id,\n        g.title, \n        g.description, \n        t.name as tone_name, \n        t.stages as tone_stages, \n        t.greeting, \n        t.unmet_behavior as \"unmet_behavior: GoalBehavior\", \n        t.deadline as \"deadline: DeadlineType\"\n        FROM groups g\n        LEFT JOIN tones t\n        ON g.tone_id = t.id\n        WHERE g.user_id = $1 AND g.id = $2;"
+  },
   "a1ab02e0cce4a502a620e0898bdbf4078e79fd9ebb07cb9f5863b891978e4932": {
     "describe": {
       "columns": [
@@ -394,84 +622,60 @@
     },
     "query": "SELECT \n        id, name, stages, deadline as \"deadline: DeadlineType\", global, \n        greeting, unmet_behavior as \"unmet_behavior: GoalBehavior\", user_id \n        FROM tones \n        WHERE global = 'true' OR user_id = $1;"
   },
-  "c40531eecd94fe531ef5a5b7729930eabf9bf3691e4a36468adb00fd9c18c56d": {
+  "bbcb1345582d3c8d0f5acefc8c9e1d97a0249cb1c7a54be3e45432c0186e2998": {
     "describe": {
       "columns": [
         {
-          "name": "title",
+          "name": "id",
           "ordinal": 0,
+          "type_info": "Int8"
+        },
+        {
+          "name": "title",
+          "ordinal": 1,
           "type_info": "Varchar"
         },
         {
           "name": "description",
-          "ordinal": 1,
+          "ordinal": 2,
           "type_info": "Text"
         },
         {
-          "name": "tone_name",
-          "ordinal": 2,
-          "type_info": "Varchar"
-        },
-        {
-          "name": "tone_stages",
+          "name": "stage",
           "ordinal": 3,
-          "type_info": "TextArray"
+          "type_info": "Int2"
         },
         {
-          "name": "greeting",
+          "name": "group_id",
           "ordinal": 4,
-          "type_info": "Varchar"
+          "type_info": "Int8"
         },
         {
-          "name": "unmet_behavior: GoalBehavior",
+          "name": "deadline",
           "ordinal": 5,
-          "type_info": {
-            "Custom": {
-              "kind": {
-                "Enum": [
-                  "hide",
-                  "nice",
-                  "mean"
-                ]
-              },
-              "name": "goal_behavior"
-            }
-          }
-        },
-        {
-          "name": "deadline: DeadlineType",
-          "ordinal": 6,
-          "type_info": {
-            "Custom": {
-              "kind": {
-                "Enum": [
-                  "off",
-                  "soft",
-                  "hard"
-                ]
-              },
-              "name": "deadline_type"
-            }
-          }
+          "type_info": "Date"
         }
       ],
       "nullable": [
         false,
+        false,
         true,
         false,
         false,
-        false,
-        false,
-        false
+        true
       ],
       "parameters": {
         "Left": [
+          "Varchar",
+          "Text",
+          "Int2",
+          "Date",
           "Int8",
           "Int8"
         ]
       }
     },
-    "query": "SELECT \n        g.title, \n        g.description, \n        t.name as tone_name, \n        t.stages as tone_stages, \n        t.greeting, \n        t.unmet_behavior as \"unmet_behavior: GoalBehavior\", \n        t.deadline as \"deadline: DeadlineType\"\n        FROM groups g\n        LEFT JOIN tones t\n        ON g.tone_id = t.id\n        WHERE g.user_id = $1 AND g.id = $2;"
+    "query": "UPDATE goals\n        SET (title, description, stage, deadline) =\n        ($1, $2, $3, $4)\n        WHERE \n        id = $5 AND group_id = $6\n        RETURNING *;"
   },
   "d6ce5de92d97057dfd160773d006f87fdbf170e8069019b7e80e07a9437b0258": {
     "describe": {
