@@ -1,15 +1,24 @@
 pub mod csrf_token;
 pub mod mail;
+pub mod queries;
 pub mod routes;
 pub mod session_values;
 
 use actix_session::Session;
-use actix_web::error::ErrorInternalServerError;
+use actix_web::{
+    dev,
+    error::ErrorInternalServerError,
+    http::{header, StatusCode},
+    middleware::ErrorHandlerResponse,
+};
 use anyhow::{anyhow, Result};
-use nanoid::nanoid;
+use log::error;
 use serde::{Deserialize, Serialize};
-use shuttle_runtime::tracing::error;
-use sqlx::{types::chrono, PgPool, Postgres, QueryBuilder};
+use sqlx::{
+    types::{chrono, Uuid},
+    PgPool, Postgres, QueryBuilder,
+};
+use webauthn_rs::prelude::PasskeyRegistration;
 
 pub trait SessionValue: Clone + Serialize + for<'a> Deserialize<'a> {
     fn save(&self, session: &Session) -> actix_web::Result<()> {
@@ -37,12 +46,18 @@ pub trait SessionValue: Clone + Serialize + for<'a> Deserialize<'a> {
     }
 }
 
+impl SessionValue for PasskeyRegistration {
+    fn save_name() -> &'static str {
+        "reg_stage"
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct User {
     pub id: i64,
     pub name: Option<String>,
     pub email: String,
-    pub userid: String,
+    pub userid: Uuid,
 }
 
 #[derive(sqlx::Type, Debug, Clone)]
@@ -96,6 +111,12 @@ pub struct GroupDisplay {
     pub deadline: DeadlineType,
 }
 
+#[derive(Debug, Deserialize)]
+pub struct GroupLink {
+    id: i64,
+    title: String,
+}
+
 #[derive(Clone, Debug)]
 pub struct Goal {
     pub id: i64,
@@ -104,6 +125,13 @@ pub struct Goal {
     pub stage: i16,
     pub group_id: i64,
     pub deadline: Option<chrono::NaiveDate>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct WebauthnCredential {
+    pub id: Uuid,
+    pub user_id: i64,
+    pub passkey: String,
 }
 
 pub async fn seed_db(pool: &PgPool) {
@@ -120,10 +148,9 @@ pub async fn seed_db(pool: &PgPool) {
     } else {
         sqlx::query_as!(
             User,
-            "INSERT INTO users(name, email, userid) VALUES ($1, $2, $3) RETURNING *;",
+            "INSERT INTO users(name, email) VALUES ($1, $2) RETURNING *;",
             "Rick Henry".into(),
             "rickhenry@rickhenry.dev".into(),
-            nanoid!(),
         )
         .fetch_one(&mut conn)
         .await
@@ -234,4 +261,16 @@ pub async fn seed_db(pool: &PgPool) {
             .await
             .expect("to create global tones");
     }
+}
+
+pub fn handle_unauthorized<B>(
+    mut res: dev::ServiceResponse<B>,
+) -> Result<ErrorHandlerResponse<B>, actix_web::Error> {
+    let redirect_to = "/login";
+    *res.response_mut().status_mut() = StatusCode::SEE_OTHER;
+    res.response_mut().headers_mut().insert(
+        header::LOCATION,
+        header::HeaderValue::from_str(redirect_to.as_ref())?,
+    );
+    Ok(ErrorHandlerResponse::Response(res.map_into_left_body()))
 }

@@ -1,17 +1,18 @@
-use crate::{csrf_token::CsrfToken, mail::*, session_values::*, SessionValue, User};
+use crate::{
+    csrf_token::CsrfToken, mail::*, queries, session_values::*, GroupLink, SessionValue, User,
+};
 use actix_identity::Identity;
 use actix_session::Session;
 use actix_web::{
-    error::{ErrorBadRequest, ErrorInternalServerError, ErrorUnauthorized},
+    error::{ErrorBadRequest, ErrorInternalServerError},
     web::{self, Form},
     *,
 };
 use anyhow::anyhow;
 use askama::Template;
 use lettre::{AsyncSmtpTransport, AsyncTransport, Tokio1Executor};
-use nanoid::nanoid;
+use log::{error, info};
 use serde::Deserialize;
-use shuttle_runtime::tracing::{error, info};
 use sqlx::PgPool;
 
 #[derive(Template)]
@@ -195,11 +196,10 @@ async fn finish_registration(
 
     let new_user = sqlx::query_as!(
         User,
-        "INSERT INTO users(email, userid)
-            VALUES ($1, $2)
+        "INSERT INTO users(email)
+            VALUES ($1)
             RETURNING *;",
         user_registration_email.to_lowercase(),
-        nanoid!()
     )
     .fetch_one(&mut conn)
     .await
@@ -208,7 +208,7 @@ async fn finish_registration(
         ErrorInternalServerError(err)
     })?;
 
-    Identity::login(&req.extensions(), new_user.userid).map_err(|err| {
+    Identity::login(&req.extensions(), new_user.userid.to_string()).map_err(|err| {
         error!("Error Logging in new user: {}", err);
         ErrorInternalServerError(err)
     })?;
@@ -252,11 +252,9 @@ async fn login(session: Session, identity: Option<Identity>) -> Result<HttpRespo
 }
 
 #[derive(Template)]
-#[template(path = "login_finish.html")]
-struct LoginFinish {
+#[template(path = "login_select.html")]
+struct LoginSelect {
     title: String,
-    csrf_token: CsrfToken,
-    error: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -265,13 +263,12 @@ pub struct LoginForm {
     pub csrftoken: String,
 }
 
-/// Receive email from user form and send back otp code form
+/// Receive email from user form and send back login selection
 #[post("login")]
 async fn post_login(
     session: Session,
     form: Form<LoginForm>,
     pool: web::Data<PgPool>,
-    mailer: web::Data<AsyncSmtpTransport<Tokio1Executor>>,
 ) -> Result<HttpResponse> {
     CsrfToken::verify_from_session(&session, form.csrftoken.as_str())?;
     LoginCode::remove(&session);
@@ -295,12 +292,8 @@ async fn post_login(
     .await
     .map_err(ErrorInternalServerError)?;
 
-    let csrf_token = CsrfToken::get_or_create(&session)?;
-
-    let body = LoginFinish {
+    let body = LoginSelect {
         title: "Login . Silly Goals".into(),
-        csrf_token,
-        error: None,
     }
     .render()
     .map_err(ErrorInternalServerError)?;
@@ -313,14 +306,42 @@ async fn post_login(
     #[allow(clippy::unwrap_used)]
     let user = user.unwrap();
 
-    let login_code = LoginCode::new();
-    let login_email = LoginEmail::from(&form.email);
-
-    login_code.save(&session)?;
+    let login_email = LoginEmail::from(&user.email);
     login_email.save(&session)?;
 
+    Ok(HttpResponse::Ok().body(body))
+}
+
+#[derive(Template)]
+#[template(path = "login_finish.html")]
+struct LoginFinish {
+    title: String,
+    csrf_token: CsrfToken,
+    error: Option<String>,
+}
+
+#[get("/login-code")]
+async fn login_with_code(
+    session: Session,
+    mailer: web::Data<AsyncSmtpTransport<Tokio1Executor>>,
+) -> actix_web::Result<HttpResponse> {
+    let login_email = LoginEmail::get(&session).map_err(ErrorInternalServerError)?;
+
+    if login_email.is_none() {
+        return Ok(HttpResponse::SeeOther()
+            .insert_header(("Location", "/login"))
+            .finish());
+    }
+
+    // We have already checked for none, so unwrap is ok here.
+    #[allow(clippy::unwrap_used)]
+    let login_email = login_email.unwrap();
+
+    let login_code = LoginCode::new();
+    login_code.save(&session)?;
+
     let message = build_email_for_user(
-        &user.email,
+        &login_email,
         "Login Code for Silly Goals",
         &format!("Use code {login_code} to log in to your account."),
     )?;
@@ -333,6 +354,16 @@ async fn post_login(
             }
         }
     });
+
+    let csrf_token = CsrfToken::get_or_create(&session)?;
+
+    let body = LoginFinish {
+        title: "Login . Silly Goals".into(),
+        csrf_token,
+        error: None,
+    }
+    .render()
+    .map_err(ErrorInternalServerError)?;
 
     Ok(HttpResponse::Ok().body(body))
 }
@@ -403,19 +434,9 @@ async fn finish_login(
         .await
         .map_err(|err| ErrorInternalServerError(err))?;
 
-    let user = sqlx::query_as!(
-        User,
-        "SELECT id, email, name, userid FROM users WHERE email = $1",
-        user_login_email.to_lowercase(),
-    )
-    .fetch_one(&mut conn)
-    .await
-    .map_err(|err| {
-        error!("Error communicating with database: {}", err);
-        ErrorInternalServerError(err)
-    })?;
+    let user = queries::get_user_by_email(&mut conn, &user_login_email).await?;
 
-    Identity::login(&req.extensions(), user.userid).map_err(|err| {
+    Identity::login(&req.extensions(), user.userid.to_string()).map_err(|err| {
         error!("Error Logging in new user: {}", err);
         ErrorInternalServerError(err)
     })?;
@@ -443,6 +464,7 @@ async fn logout(identity: Identity) -> HttpResponse {
 struct Profile {
     title: String,
     user: User,
+    groups: Vec<GroupLink>,
 }
 
 /// Display user profie information
@@ -453,25 +475,20 @@ async fn profile(identity: Identity, pool: web::Data<PgPool>) -> actix_web::Resu
         .acquire()
         .await
         .map_err(ErrorInternalServerError)?;
-    let user_id = identity.id().map_err(ErrorInternalServerError)?;
-    let user = sqlx::query_as!(
-        User,
-        "SELECT id, name, userid, email FROM users
-            WHERE userid = $1",
-        user_id,
+    let user = queries::get_user_from_identity(&mut conn, &identity).await?;
+
+    let groups = sqlx::query_as!(
+        GroupLink,
+        "SELECT id, title FROM groups WHERE user_id = $1",
+        user.id
     )
-    .fetch_one(&mut conn)
+    .fetch_all(&mut conn)
     .await
-    .map_err(|err| match err {
-        sqlx::error::Error::RowNotFound => ErrorUnauthorized(err),
-        err => {
-            error!("Error communicating with database: {}", err);
-            ErrorInternalServerError(err)
-        }
-    })?;
+    .map_err(ErrorInternalServerError)?;
 
     Ok(Profile {
         title: "Profile . Silly Goals".into(),
         user,
+        groups,
     })
 }

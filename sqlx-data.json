@@ -54,6 +54,77 @@
     },
     "query": "INSERT INTO goals(title, description, stage, deadline, group_id) \n        VALUES ($1, $2, $3, $4, $5)\n        RETURNING *;"
   },
+  "1f8b9cfeb8923f1be92d527a3566edd3052b16beb1ff112e1372e3419464d77c": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "user_id",
+          "ordinal": 1,
+          "type_info": "Int8"
+        },
+        {
+          "name": "passkey",
+          "ordinal": 2,
+          "type_info": "Text"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Int8"
+        ]
+      }
+    },
+    "query": "SELECT id, user_id, passkey\n        FROM webauthn_credentials\n        WHERE user_id = $1"
+  },
+  "2ffafcf33b03f5ca61452861c09e80c1d706a188cdcb479876caa99e808fe954": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int8"
+        },
+        {
+          "name": "userid",
+          "ordinal": 1,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "name",
+          "ordinal": 2,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "email",
+          "ordinal": 3,
+          "type_info": "Varchar"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        true,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Varchar",
+          "Varchar"
+        ]
+      }
+    },
+    "query": "INSERT INTO users(name, email) VALUES ($1, $2) RETURNING *;"
+  },
   "44717960af68304e4b99dd1035562afe83e862dcea996832b2afdcca2dfec88e": {
     "describe": {
       "columns": [
@@ -118,7 +189,7 @@
     },
     "query": "SELECT COUNT(id)\n            FROM users\n            WHERE email\n            ILIKE $1"
   },
-  "6121c5014a49a011a789418e4eea8b0daa9b8ca1cb1ca080932eb37660820850": {
+  "5833443322816e52318542b1c884d5dcc843952e86a2ca7862186919219b4b75": {
     "describe": {
       "columns": [
         {
@@ -127,36 +198,24 @@
           "type_info": "Int8"
         },
         {
-          "name": "userid",
+          "name": "title",
           "ordinal": 1,
-          "type_info": "Varchar"
-        },
-        {
-          "name": "name",
-          "ordinal": 2,
-          "type_info": "Varchar"
-        },
-        {
-          "name": "email",
-          "ordinal": 3,
           "type_info": "Varchar"
         }
       ],
       "nullable": [
         false,
-        false,
-        true,
         false
       ],
       "parameters": {
         "Left": [
-          "Text"
+          "Int8"
         ]
       }
     },
-    "query": "SELECT * FROM users WHERE userid = $1;"
+    "query": "SELECT id, title FROM groups WHERE user_id = $1"
   },
-  "706181a3a73fcb8f31156e97f7a3b48fbbfeb88b97448f17ce65de752949dab0": {
+  "6aa3946aa9af9796c2f6fea56230537d95482da99b701d8af538fe06a943fc0d": {
     "describe": {
       "columns": [
         {
@@ -167,7 +226,7 @@
         {
           "name": "userid",
           "ordinal": 1,
-          "type_info": "Varchar"
+          "type_info": "Uuid"
         },
         {
           "name": "name",
@@ -188,13 +247,11 @@
       ],
       "parameters": {
         "Left": [
-          "Varchar",
-          "Varchar",
           "Varchar"
         ]
       }
     },
-    "query": "INSERT INTO users(name, email, userid) VALUES ($1, $2, $3) RETURNING *;"
+    "query": "INSERT INTO users(email)\n            VALUES ($1)\n            RETURNING *;"
   },
   "7c2448a9a782f19b1d703d493e8e8056abf98de6cdba9f2b9d1e7800ce72b440": {
     "describe": {
@@ -217,7 +274,7 @@
         {
           "name": "userid",
           "ordinal": 3,
-          "type_info": "Varchar"
+          "type_info": "Uuid"
         }
       ],
       "nullable": [
@@ -280,83 +337,6 @@
       }
     },
     "query": "INSERT INTO groups(title, description, tone_id, user_id) \n        VALUES ($1, $2, $3, $4) \n        RETURNING *;"
-  },
-  "7fdb76cf1a9e642f5aec4aba13dc7848fbe0ac996c2296a9797acd6c5d460b9f": {
-    "describe": {
-      "columns": [
-        {
-          "name": "id",
-          "ordinal": 0,
-          "type_info": "Int8"
-        },
-        {
-          "name": "userid",
-          "ordinal": 1,
-          "type_info": "Varchar"
-        },
-        {
-          "name": "name",
-          "ordinal": 2,
-          "type_info": "Varchar"
-        },
-        {
-          "name": "email",
-          "ordinal": 3,
-          "type_info": "Varchar"
-        }
-      ],
-      "nullable": [
-        false,
-        false,
-        true,
-        false
-      ],
-      "parameters": {
-        "Left": [
-          "Text"
-        ]
-      }
-    },
-    "query": "SELECT * FROM users WHERE userid = $1"
-  },
-  "8ddd86810955ce7c3cf94d983ec5529d8519b6b787c107b2a633086d6cd35807": {
-    "describe": {
-      "columns": [
-        {
-          "name": "id",
-          "ordinal": 0,
-          "type_info": "Int8"
-        },
-        {
-          "name": "userid",
-          "ordinal": 1,
-          "type_info": "Varchar"
-        },
-        {
-          "name": "name",
-          "ordinal": 2,
-          "type_info": "Varchar"
-        },
-        {
-          "name": "email",
-          "ordinal": 3,
-          "type_info": "Varchar"
-        }
-      ],
-      "nullable": [
-        false,
-        false,
-        true,
-        false
-      ],
-      "parameters": {
-        "Left": [
-          "Varchar",
-          "Varchar"
-        ]
-      }
-    },
-    "query": "INSERT INTO users(email, userid)\n            VALUES ($1, $2)\n            RETURNING *;"
   },
   "97d713d152586bb541e3c362d8bc92e9efc33174ad054330977cf1bdb47407da": {
     "describe": {
@@ -487,6 +467,19 @@
       }
     },
     "query": "SELECT \n        g.id,\n        g.title, \n        g.description, \n        t.name as tone_name, \n        t.stages as tone_stages, \n        t.greeting, \n        t.unmet_behavior as \"unmet_behavior: GoalBehavior\", \n        t.deadline as \"deadline: DeadlineType\"\n        FROM groups g\n        LEFT JOIN tones t\n        ON g.tone_id = t.id\n        WHERE g.user_id = $1 AND g.id = $2;"
+  },
+  "9ab7fd2079191afc93eddad174b92d2fdbe18badfb943e4464847c79102ed46a": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Int8",
+          "Text"
+        ]
+      }
+    },
+    "query": "INSERT INTO webauthn_credentials(user_id, passkey)\n        VALUES ($1, $2);"
   },
   "a1ab02e0cce4a502a620e0898bdbf4078e79fd9ebb07cb9f5863b891978e4932": {
     "describe": {
@@ -698,7 +691,7 @@
         {
           "name": "userid",
           "ordinal": 3,
-          "type_info": "Varchar"
+          "type_info": "Uuid"
         }
       ],
       "nullable": [
@@ -714,6 +707,38 @@
       }
     },
     "query": "SELECT id, name, email, userid FROM users WHERE email = $1"
+  },
+  "e994e29544f55bdb40596048b690382c1e1dab438fd14698f76337c456e93aa7": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "passkey",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "user_id",
+          "ordinal": 2,
+          "type_info": "Int8"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Int8"
+        ]
+      }
+    },
+    "query": "SELECT * FROM webauthn_credentials WHERE user_id = $1;"
   },
   "eb60e8aafa9eb665886a28d6b25b5462725a5dd3b297982c766cb1c651d9deea": {
     "describe": {
@@ -751,7 +776,7 @@
         {
           "name": "userid",
           "ordinal": 2,
-          "type_info": "Varchar"
+          "type_info": "Uuid"
         },
         {
           "name": "email",
@@ -767,7 +792,7 @@
       ],
       "parameters": {
         "Left": [
-          "Text"
+          "Uuid"
         ]
       }
     },
@@ -784,7 +809,7 @@
         {
           "name": "userid",
           "ordinal": 1,
-          "type_info": "Varchar"
+          "type_info": "Uuid"
         },
         {
           "name": "name",

@@ -1,17 +1,25 @@
+use std::time::Duration;
+
 use actix_identity::IdentityMiddleware;
 use actix_session::{storage::RedisSessionStore, SessionMiddleware};
-use actix_web::{cookie::Key, get, middleware::Compress, web, web::ServiceConfig, Responder};
+use actix_web::{
+    cookie::Key,
+    get,
+    http::StatusCode,
+    middleware::{Compress, ErrorHandlers, Logger},
+    web, App, HttpServer, Responder,
+};
 use actix_web_static_files::ResourceFiles;
 use askama_actix::Template;
+use env_logger::Env;
 use lettre::{transport::smtp::authentication::Credentials, AsyncSmtpTransport, Tokio1Executor};
-use shuttle_actix_web::ShuttleActixWeb;
-use shuttle_runtime::tracing::info;
-use shuttle_secrets::SecretStore;
+use log::info;
 use silly_goals::{
-    routes::{auth, dashboard},
+    handle_unauthorized,
+    routes::{auth, dashboard, webauthn_routes},
     seed_db,
 };
-use sqlx::PgPool;
+use sqlx::{migrate::MigrateDatabase, postgres::PgPoolOptions, Postgres};
 use webauthn_rs::prelude::*;
 
 #[derive(Template)]
@@ -42,14 +50,25 @@ async fn about() -> impl Responder {
 
 include!(concat!(env!("OUT_DIR"), "/generated.rs"));
 
-#[allow(unused)]
-#[shuttle_runtime::main]
-async fn actix_web(
-    #[shuttle_shared_db::Postgres(
-        local_uri = "postgres://rick:@localhost:5478/silly-goals"
-    )] pool: PgPool,
-    #[shuttle_secrets::Secrets] secret_store: SecretStore,
-) -> ShuttleActixWeb<impl FnOnce(&mut ServiceConfig) + Send + Clone + 'static> {
+#[actix_web::main]
+async fn main() -> Result<(), std::io::Error> {
+    env_logger::init_from_env(Env::default().default_filter_or("info"));
+    dotenvy::dotenv().ok();
+
+    let db_url = dotenvy::var("DATABASE_URL").expect("DATABASE_URL must be set");
+
+    if !Postgres::database_exists(&db_url).await.unwrap_or(false) {
+        Postgres::create_database(&db_url)
+            .await
+            .expect("to created database");
+    }
+
+    let pool = PgPoolOptions::new()
+        .acquire_timeout(Duration::from_secs(10))
+        .connect(&db_url.clone())
+        .await
+        .expect("Could not connect to database");
+
     info!("Running migrations");
     sqlx::migrate!("./migrations")
         .run(&pool)
@@ -65,38 +84,27 @@ async fn actix_web(
     info!("Seeding Database");
     seed_db(&pool).await;
 
-    let redis_uri = secret_store
-        .get("REDIS_URI")
-        .expect("REDIS_URI must be set");
+    let redis_uri = dotenvy::var("REDIS_URI").expect("REDIS_URI must be set");
 
-    let hostname = secret_store.get("HOSTNAME").expect("HOSTNAME must be set");
+    let hostname = dotenvy::var("HOSTNAME").expect("HOSTNAME must be set");
 
     // TODO: make this nicer
     let rp_origin = Url::parse(&format!("https://{hostname}")).expect("Invalid URL");
     let builder = WebauthnBuilder::new(&hostname, &rp_origin)
         .expect("Invalid configuration")
-        .rp_name("Actix-Polls");
+        .rp_name("Silly Goals");
 
     let webauthn = web::Data::new(builder.build().expect("Invalid configuration of webauthn"));
 
-    let secret_key = secret_store
-        .get("SECRET_KEY")
-        .expect("SECRET_KEY must be set");
+    let secret_key = dotenvy::var("SECRET_KEY").expect("SECRET_KEY must be set");
 
     let secret_key = Key::from(&secret_key.chars().map(|c| c as u8).collect::<Vec<u8>>());
 
     // SETUP EMAIL
-    let smtp_user = secret_store
-        .get("SMTP_USER")
-        .expect("SMTP_USER must be set");
-    let smtp_password = secret_store
-        .get("SMTP_PASSWORD")
-        .expect("SMTP_PASSWORD must be set");
-    let smtp_host = secret_store
-        .get("SMTP_HOST")
-        .expect("SMTP_HOST must be set");
-    let smtp_port: u16 = secret_store
-        .get("SMTP_PORT")
+    let smtp_user = dotenvy::var("SMTP_USER").expect("SMTP_USER must be set");
+    let smtp_password = dotenvy::var("SMTP_PASSWORD").expect("SMTP_PASSWORD must be set");
+    let smtp_host = dotenvy::var("SMTP_HOST").expect("SMTP_HOST must be set");
+    let smtp_port: u16 = dotenvy::var("SMTP_PORT")
         .expect("SMTP_PORT must be set")
         .parse()
         .expect("SMTP_PORT must a a valid port number");
@@ -121,41 +129,47 @@ async fn actix_web(
         .expect("to connect to redis store");
 
     info!("Building server config");
-    let config = move |cfg: &mut ServiceConfig| {
+    HttpServer::new(move || {
         let generated = generate();
-        cfg.service(ResourceFiles::new("/static", generated))
-            .service(
-                web::scope("")
-                    .wrap(SessionMiddleware::new(
-                        redis_store.clone(),
-                        secret_key.clone(),
-                    ))
-                    .wrap(IdentityMiddleware::default())
-                    .wrap(Compress::default())
-                    .app_data(web::Data::new(pool.clone()))
-                    .app_data(web::Data::new(mailer.clone()))
-                    .service(about)
-                    .service(auth::register)
-                    .service(auth::post_register)
-                    .service(auth::finish_registration)
-                    .service(auth::login)
-                    .service(auth::post_login)
-                    .service(auth::finish_login)
-                    .service(auth::profile)
-                    .service(auth::logout)
-                    .service(dashboard::dashboard)
-                    .service(dashboard::new_group)
-                    .service(dashboard::post_new_group)
-                    .service(dashboard::get_group)
-                    .service(dashboard::new_goal)
-                    .service(dashboard::post_new_goal)
-                    .service(dashboard::get_goal)
-                    .service(dashboard::edit_goal)
-                    .service(dashboard::post_edit_goal)
-                    .service(index),
-            );
-    };
-    // TODO: error handler to redirect unauthorized reqs
-
-    Ok(config.into())
+        App::new()
+            .wrap(SessionMiddleware::new(
+                redis_store.clone(),
+                secret_key.clone(),
+            ))
+            .wrap(IdentityMiddleware::default())
+            .wrap(Compress::default())
+            .wrap(ErrorHandlers::new().handler(StatusCode::UNAUTHORIZED, handle_unauthorized))
+            .wrap(Logger::default())
+            .app_data(webauthn.clone())
+            .app_data(web::Data::new(pool.clone()))
+            .service(ResourceFiles::new("/static", generated))
+            .app_data(web::Data::new(mailer.clone()))
+            .service(about)
+            .service(auth::register)
+            .service(auth::post_register)
+            .service(auth::finish_registration)
+            .service(auth::login)
+            .service(auth::login_with_code)
+            .service(auth::post_login)
+            .service(auth::finish_login)
+            .service(auth::profile)
+            .service(auth::logout)
+            .service(dashboard::dashboard)
+            .service(dashboard::new_group)
+            .service(dashboard::post_new_group)
+            .service(dashboard::get_group)
+            .service(dashboard::new_goal)
+            .service(dashboard::post_new_goal)
+            .service(dashboard::get_goal)
+            .service(dashboard::edit_goal)
+            .service(dashboard::post_edit_goal)
+            .service(webauthn_routes::start_registration)
+            .service(webauthn_routes::finish_registration)
+            .service(webauthn_routes::start_login)
+            .service(webauthn_routes::finish_login)
+            .service(index)
+    })
+    .bind(("0.0.0.0", 8000))?
+    .run()
+    .await
 }

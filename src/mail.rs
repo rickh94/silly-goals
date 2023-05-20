@@ -1,7 +1,7 @@
 use actix_web::error::{ErrorBadRequest, ErrorInternalServerError};
 use anyhow::anyhow;
 use lettre::{message::Mailbox, Address, Message};
-use shuttle_runtime::tracing::error;
+use log::error;
 
 pub fn parse_email_to_mailbox(email: &str) -> actix_web::Result<Mailbox> {
     let email_address = email.parse::<Address>().map_err(|err| {

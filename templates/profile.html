@@ -1,5 +1,7 @@
 {% extends "internal.html" %}
 {% block content %}
+<script src="https://unpkg.com/@simplewebauthn/browser@7.2.0/dist/bundle/index.umd.min.js" integrity="sha384-nuBUUi3/L2b1sFDENFeW+oXMpMr4IieiWgJHipm0600wv8L2QCuRse1Vf/X9kOSQ" crossorigin="anonymous"></script>
+<script src="/static/webauthn-register.js"></script>
 <div class="divide-y divide-gray-200 overflow-hidden rounded-lg bg-white shadow">
   <div class="px-4 py-5 sm:px-6">
     <h1 class="font-bold text-2xl text-zinc-900">User Settings</h1>
@@ -21,15 +23,10 @@
         <dd class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">{{ user.email }}</dd>
       </div>
       <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4">
-        <!-- TODO: add default silliness for user -->
-        <dt class="text-sm font-medium leading-6 text-gray-900">Default Silliness</dt>
-        <dd class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">Gentle</dd>
-      </div>
-      <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4">
         <dt class="text-sm font-medium leading-6 text-gray-900">Passwordless Login</dt>
         <dd class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">
           <!-- TODO: implement this -->
-          <button type="button" x-data @click="alert('register')"
+          <button type="button" x-data @click="startRegistration()"
             class="rounded-md bg-indigo-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">Register
             This Device</button>
         </dd>

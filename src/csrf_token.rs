@@ -4,9 +4,9 @@ use actix_session::Session;
 use actix_web::error::ErrorInternalServerError;
 use anyhow::anyhow;
 use base64::{engine::general_purpose, Engine};
+use log::error;
 use rand::{thread_rng, Rng};
 use serde::{Deserialize, Serialize};
-use shuttle_runtime::tracing::error;
 
 use crate::SessionValue;
 

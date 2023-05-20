@@ -1,16 +1,17 @@
 use actix_identity::Identity;
 use actix_session::Session;
 use actix_web::{
-    error::{ErrorInternalServerError, ErrorNotFound, ErrorUnauthorized},
+    error::{ErrorInternalServerError, ErrorNotFound},
     get, post, web, HttpResponse,
 };
 use askama::Template;
+use log::error;
 use serde::Deserialize;
-use shuttle_runtime::tracing::error;
-use sqlx::{types::chrono, PgPool};
+use sqlx::PgPool;
 
 use crate::{
-    csrf_token::CsrfToken, DeadlineType, Goal, GoalBehavior, Group, GroupDisplay, Tone, User,
+    csrf_token::CsrfToken, queries, DeadlineType, Goal, GoalBehavior, Group, GroupDisplay,
+    GroupLink, Tone, User,
 };
 
 mod filters {
@@ -32,7 +33,7 @@ mod filters {
     }
 
     pub fn stage_text(index: &i16, stages: &Vec<String>) -> ::askama::Result<String> {
-        if stages.len() <= *index as usize {
+        if stages.len() >= *index as usize {
             Ok("unknown".into())
         } else {
             Ok(stages[*index as usize].clone())
@@ -55,22 +56,7 @@ async fn dashboard(identity: Identity, pool: web::Data<PgPool>) -> actix_web::Re
         .acquire()
         .await
         .map_err(ErrorInternalServerError)?;
-    let user_id = identity.id().map_err(ErrorInternalServerError)?;
-    let user = sqlx::query_as!(
-        User,
-        "SELECT id, name, userid, email FROM users
-            WHERE userid = $1",
-        user_id,
-    )
-    .fetch_one(&mut conn)
-    .await
-    .map_err(|err| match err {
-        sqlx::error::Error::RowNotFound => ErrorUnauthorized(err),
-        err => {
-            error!("Error communicating with database: {}", err);
-            ErrorInternalServerError(err)
-        }
-    })?;
+    let user = queries::get_user_from_identity(&mut conn, &identity).await?;
 
     let groups = sqlx::query_as!(Group, "SELECT * FROM groups WHERE user_id = $1", user.id)
         .fetch_all(&mut conn)
@@ -106,22 +92,7 @@ async fn new_group(
         .await
         .map_err(ErrorInternalServerError)?;
 
-    let userid = identity.id().map_err(ErrorInternalServerError)?;
-    let user = sqlx::query_as!(
-        User,
-        "SELECT id, name, userid, email FROM users
-            WHERE userid = $1",
-        userid,
-    )
-    .fetch_one(&mut conn)
-    .await
-    .map_err(|err| match err {
-        sqlx::error::Error::RowNotFound => ErrorUnauthorized(err),
-        err => {
-            error!("Error communicating with database: {}", err);
-            ErrorInternalServerError(err)
-        }
-    })?;
+    let user = queries::get_user_from_identity(&mut conn, &identity).await?;
 
     let tones = sqlx::query_as!(
         Tone,
@@ -175,11 +146,7 @@ async fn post_new_group(
         .await
         .map_err(ErrorInternalServerError)?;
 
-    let userid = identity.id().map_err(ErrorInternalServerError)?;
-    let user = sqlx::query_as!(User, "SELECT * FROM users WHERE userid = $1", userid)
-        .fetch_one(&mut conn)
-        .await
-        .map_err(ErrorInternalServerError)?;
+    let user = queries::get_user_from_identity(&mut conn, &identity).await?;
 
     let created_group = sqlx::query_as!(
         Group,
@@ -210,6 +177,7 @@ struct ShowGroup {
     user: User,
     group: GroupDisplay,
     goals_in_stages: Vec<Vec<Goal>>,
+    groups: Vec<GroupLink>,
 }
 
 #[get("/groups/{id}")]
@@ -225,11 +193,7 @@ async fn get_group(
         .await
         .map_err(ErrorInternalServerError)?;
 
-    let userid = identity.id().map_err(ErrorInternalServerError)?;
-    let user = sqlx::query_as!(User, "SELECT * FROM users WHERE userid = $1;", userid)
-        .fetch_one(&mut conn)
-        .await
-        .map_err(ErrorInternalServerError)?;
+    let user = queries::get_user_from_identity(&mut conn, &identity).await?;
 
     let group = sqlx::query_as!(
         GroupDisplay,
@@ -271,11 +235,21 @@ async fn get_group(
         }
     }
 
+    let groups = sqlx::query_as!(
+        GroupLink,
+        "SELECT id, title FROM groups WHERE user_id = $1",
+        user.id
+    )
+    .fetch_all(&mut conn)
+    .await
+    .map_err(ErrorInternalServerError)?;
+
     let body = ShowGroup {
         title: format!("Group {} . Silly Goals", group.title),
         user,
         group,
         goals_in_stages,
+        groups,
     }
     .render()
     .map_err(ErrorInternalServerError)?;
@@ -297,6 +271,7 @@ struct NewGoal {
     goals_in_stages: Vec<Vec<Goal>>,
     selected_stage: usize,
     csrf_token: CsrfToken,
+    groups: Vec<GroupLink>,
 }
 
 #[get("/groups/{id}/goals/new")]
@@ -315,11 +290,16 @@ async fn new_goal(
         .await
         .map_err(ErrorInternalServerError)?;
 
-    let userid = identity.id().map_err(ErrorInternalServerError)?;
-    let user = sqlx::query_as!(User, "SELECT * FROM users WHERE userid = $1;", userid)
-        .fetch_one(&mut conn)
-        .await
-        .map_err(ErrorInternalServerError)?;
+    let user = queries::get_user_from_identity(&mut conn, &identity).await?;
+
+    let groups = sqlx::query_as!(
+        GroupLink,
+        "SELECT id, title FROM groups WHERE user_id = $1",
+        user.id
+    )
+    .fetch_all(&mut conn)
+    .await
+    .map_err(ErrorInternalServerError)?;
 
     let group = sqlx::query_as!(
         GroupDisplay,
@@ -370,6 +350,7 @@ async fn new_goal(
         goals_in_stages,
         selected_stage,
         csrf_token,
+        groups,
     }
     .render()
     .map_err(ErrorInternalServerError)?;
@@ -377,7 +358,7 @@ async fn new_goal(
     Ok(HttpResponse::Ok().body(body))
 }
 
-#[derive(Deserialize)]
+#[derive(Clone, Deserialize)]
 struct NewGoalForm {
     title: String,
     description: Option<String>,
@@ -403,11 +384,7 @@ async fn post_new_goal(
         .await
         .map_err(ErrorInternalServerError)?;
 
-    let userid = identity.id().map_err(ErrorInternalServerError)?;
-    let user = sqlx::query_as!(User, "SELECT * FROM users WHERE userid = $1", userid)
-        .fetch_one(&mut conn)
-        .await
-        .map_err(ErrorInternalServerError)?;
+    let user = queries::get_user_from_identity(&mut conn, &identity).await?;
 
     let group = sqlx::query_as!(
         Group,
@@ -451,6 +428,7 @@ struct ShowGoal {
     goal: Goal,
     group: GroupDisplay,
     goals_in_stages: Vec<Vec<Goal>>,
+    groups: Vec<GroupLink>,
 }
 
 #[get("/groups/{group_id}/goals/{goal_id}")]
@@ -466,11 +444,7 @@ async fn get_goal(
         .await
         .map_err(ErrorInternalServerError)?;
 
-    let userid = identity.id().map_err(ErrorInternalServerError)?;
-    let user = sqlx::query_as!(User, "SELECT * FROM users WHERE userid = $1;", userid)
-        .fetch_one(&mut conn)
-        .await
-        .map_err(ErrorInternalServerError)?;
+    let user = queries::get_user_from_identity(&mut conn, &identity).await?;
 
     let group = sqlx::query_as!(
         GroupDisplay,
@@ -522,12 +496,22 @@ async fn get_goal(
     #[allow(clippy::unwrap_used)]
     let goal = goal.unwrap().clone();
 
+    let groups = sqlx::query_as!(
+        GroupLink,
+        "SELECT id, title FROM groups WHERE user_id = $1",
+        user.id
+    )
+    .fetch_all(&mut conn)
+    .await
+    .map_err(ErrorInternalServerError)?;
+
     let body = ShowGoal {
         title: format!("Group {} . Silly Goals", group.title),
         user,
         goal,
         group,
         goals_in_stages,
+        groups,
     }
     .render()
     .map_err(ErrorInternalServerError)?;
@@ -544,6 +528,7 @@ struct EditGoal {
     goals_in_stages: Vec<Vec<Goal>>,
     csrf_token: CsrfToken,
     goal: Goal,
+    groups: Vec<GroupLink>,
 }
 
 #[get("/groups/{group_id}/goals/{goal_id}/edit")]
@@ -560,11 +545,7 @@ async fn edit_goal(
         .await
         .map_err(ErrorInternalServerError)?;
 
-    let userid = identity.id().map_err(ErrorInternalServerError)?;
-    let user = sqlx::query_as!(User, "SELECT * FROM users WHERE userid = $1;", userid)
-        .fetch_one(&mut conn)
-        .await
-        .map_err(ErrorInternalServerError)?;
+    let user = queries::get_user_from_identity(&mut conn, &identity).await?;
 
     let group = sqlx::query_as!(
         GroupDisplay,
@@ -618,6 +599,15 @@ async fn edit_goal(
 
     let csrf_token = CsrfToken::get_or_create(&session)?;
 
+    let groups = sqlx::query_as!(
+        GroupLink,
+        "SELECT id, title FROM groups WHERE user_id = $1",
+        user.id
+    )
+    .fetch_all(&mut conn)
+    .await
+    .map_err(ErrorInternalServerError)?;
+
     let body = EditGoal {
         title: format!("Group {} . Silly Goals", group.title),
         user,
@@ -625,6 +615,7 @@ async fn edit_goal(
         goals_in_stages,
         csrf_token,
         goal,
+        groups,
     }
     .render()
     .map_err(ErrorInternalServerError)?;
@@ -658,11 +649,7 @@ async fn post_edit_goal(
         .await
         .map_err(ErrorInternalServerError)?;
 
-    let userid = identity.id().map_err(ErrorInternalServerError)?;
-    let user = sqlx::query_as!(User, "SELECT * FROM users WHERE userid = $1", userid)
-        .fetch_one(&mut conn)
-        .await
-        .map_err(ErrorInternalServerError)?;
+    let user = queries::get_user_from_identity(&mut conn, &identity).await?;
 
     let group = sqlx::query_as!(
         Group,
