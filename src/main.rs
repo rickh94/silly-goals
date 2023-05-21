@@ -129,7 +129,7 @@ async fn main() -> Result<(), std::io::Error> {
         .await
         .expect("to connect to redis store");
 
-    info!("Building server config");
+    info!("Creating server");
     HttpServer::new(move || {
         let generated = generate();
         App::new()

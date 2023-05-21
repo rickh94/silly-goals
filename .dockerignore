@@ -1,0 +1,10 @@
+*
+
+!/src
+!/static
+!/templates
+!/Cargo.toml
+!/Cargo.lock
+!/sqlx-data.json
+!/build.rs
+!/migrations

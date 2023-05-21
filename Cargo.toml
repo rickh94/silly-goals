@@ -14,15 +14,17 @@ tokio = "1.28"
 askama = "0.12"
 thiserror = "1.0"
 askama_actix = "0.14"
-sqlx = { version = "0.6", features = ["runtime-tokio-native-tls", "postgres", "macros", "json", "chrono", "offline", "uuid"]}
-lettre = { version = "0.10.2", features = [
+sqlx = { version = "0.6", features = ["runtime-actix-rustls", "postgres", "macros", "json", "chrono", "offline", "uuid"]}
+lettre = { version = "0.10.2", default-features = false, features = [
+  "builder",
+  "hostname",
   "smtp-transport",
   "tokio1",
-  "tokio1-native-tls",
+  "tokio1-rustls-tls"
 ] }
 actix-identity = "0.5.2"
 actix-session = { version = "0.7.2", features = ["redis-rs-session", "redis-rs-tls-session"] }
-redis_rs = "0.9"
+redis = { version = "0.23", features = ["tls-rustls"] }
 webauthn-rs = { version = "0.4.8", features = [
   "danger-allow-state-serialisation",
 ] }

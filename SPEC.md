@@ -128,3 +128,5 @@ Goal tracking application, but with attitude to be less boring and pressury.
 ## Other stuff
 
 - [ ] good timezone support
+
+TODO: think about encrypting session auth values
