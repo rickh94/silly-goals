@@ -85,7 +85,7 @@ async fn main() -> Result<(), std::io::Error> {
     info!("Seeding Database");
     seed_db(&pool).await;
 
-    let redis_uri = dotenvy::var("REDIS_URI").expect("REDIS_URI must be set");
+    let redis_uri = dotenvy::var("REDIS_URL").expect("REDIS_URI must be set");
 
     let hostname = dotenvy::var("HOSTNAME").expect("HOSTNAME must be set");
 
