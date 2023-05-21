@@ -71,6 +71,7 @@ async fn main() -> Result<(), std::io::Error> {
 
     info!("Running migrations");
     sqlx::migrate!("./migrations")
+        .set_locking(false)
         .run(&pool)
         .await
         .map_err(|err| {
