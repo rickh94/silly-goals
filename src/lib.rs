@@ -266,6 +266,8 @@ pub async fn seed_db(pool: &PgPool) {
 pub fn handle_unauthorized<B>(
     mut res: dev::ServiceResponse<B>,
 ) -> Result<ErrorHandlerResponse<B>, actix_web::Error> {
+    // TODO: delete session to prevent redirect loops or check for valid user
+    // on login page
     let redirect_to = "/login";
     *res.response_mut().status_mut() = StatusCode::SEE_OTHER;
     res.response_mut().headers_mut().insert(

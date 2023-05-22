@@ -57,30 +57,24 @@ async fn main() -> Result<(), std::io::Error> {
 
     let db_url = dotenvy::var("DATABASE_URL").expect("DATABASE_URL must be set");
 
-    if !Postgres::database_exists(&db_url).await.unwrap_or(false) {
-        Postgres::create_database(&db_url)
-            .await
-            .expect("to created database");
-    }
-
     let pool = PgPoolOptions::new()
         .acquire_timeout(Duration::from_secs(10))
         .connect(&db_url.clone())
         .await
         .expect("Could not connect to database");
 
-    info!("Running migrations");
-    sqlx::migrate!("./migrations")
-        .set_locking(false)
-        .run(&pool)
-        .await
-        .map_err(|err| {
-            dbg!(err);
-            std::io::Error::new(
-                std::io::ErrorKind::InvalidData,
-                "Database migration was unsuccessful",
-            )
-        })?;
+    // info!("Running migrations");
+    // sqlx::migrate!("./migrations")
+    //     .set_locking(false)
+    //     .run(&pool)
+    //     .await
+    //     .map_err(|err| {
+    //         dbg!(err);
+    //         std::io::Error::new(
+    //             std::io::ErrorKind::InvalidData,
+    //             "Database migration was unsuccessful",
+    //         )
+    //     })?;
 
     info!("Seeding Database");
     seed_db(&pool).await;

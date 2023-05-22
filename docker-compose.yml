@@ -1,0 +1,20 @@
+version: '3'
+services:
+  app:
+    build: .
+    environment:
+      HOSTNAME: 'silly.localhost'
+      SMTP_USER: 'silly-goals@mg.rickhenry.dev'
+      SMTP_HOST: 'smtp.mailgun.org'
+      SMTP_PORT: 587
+      SERVER_NAME: 'Silly Goals'
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+      - redis
+
+  redis:
+    image: redis:latest
+    command: redis-server --requirepass 'supersecretredispassword'
+
