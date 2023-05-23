@@ -1,20 +1,21 @@
 use actix_identity::Identity;
 use actix_web::error::{ErrorInternalServerError, ErrorUnauthorized};
 use log::error;
-use sqlx::{pool::PoolConnection, types::Uuid, Postgres};
+use sqlx::{pool::PoolConnection, types::Uuid, Sqlite};
 
 use crate::User;
 
 pub async fn get_user_from_identity(
-    conn: &mut PoolConnection<Postgres>,
+    conn: &mut PoolConnection<Sqlite>,
     identity: &Identity,
 ) -> actix_web::Result<User> {
-    let user_id = identity.id().map_err(ErrorInternalServerError)?;
+    let userid = identity.id().map_err(ErrorInternalServerError)?;
+    let user_uuid = Uuid::parse_str(&userid).map_err(ErrorInternalServerError)?;
     sqlx::query_as!(
         User,
-        "SELECT id, name, userid, email FROM users
-            WHERE userid = $1",
-        Uuid::parse_str(&user_id).map_err(ErrorInternalServerError)?
+        r#"SELECT id, name, userid as "userid: Uuid", email FROM users
+            WHERE userid = $1"#,
+        user_uuid
     )
     .fetch_one(conn)
     .await
@@ -28,13 +29,14 @@ pub async fn get_user_from_identity(
 }
 
 pub async fn get_user_by_email(
-    conn: &mut PoolConnection<Postgres>,
+    conn: &mut PoolConnection<Sqlite>,
     email: &str,
 ) -> actix_web::Result<User> {
+    let email = email.to_lowercase();
     sqlx::query_as!(
         User,
-        "SELECT id, email, name, userid FROM users WHERE email = $1",
-        email.to_lowercase(),
+        r#"SELECT id, email, name, userid as "userid: Uuid" FROM users WHERE email = $1"#,
+        email,
     )
     .fetch_one(conn)
     .await

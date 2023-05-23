@@ -13,7 +13,7 @@ use askama::Template;
 use lettre::{AsyncSmtpTransport, AsyncTransport, Tokio1Executor};
 use log::{error, info};
 use serde::Deserialize;
-use sqlx::PgPool;
+use sqlx::{types::Uuid, SqlitePool};
 
 #[derive(Template)]
 #[template(path = "register.html")]
@@ -63,7 +63,7 @@ pub struct RegistrationForm {
 async fn post_register(
     session: Session,
     form: Form<RegistrationForm>,
-    pool: web::Data<PgPool>,
+    pool: web::Data<SqlitePool>,
     mailer: web::Data<AsyncSmtpTransport<Tokio1Executor>>,
 ) -> Result<RegisterFinish> {
     CsrfToken::verify_from_session(&session, form.csrftoken.as_str())?;
@@ -80,8 +80,8 @@ async fn post_register(
     let existing_user_count = sqlx::query_scalar!(
         "SELECT COUNT(id)
             FROM users
-            WHERE email
-            ILIKE $1",
+            WHERE LOWER(email)
+            LIKE LOWER($1)",
         form.email
     )
     .fetch_one(&mut conn)
@@ -89,8 +89,7 @@ async fn post_register(
     .map_err(|err| {
         error!("Error communicating with database: {}", err);
         ErrorInternalServerError(err)
-    })?
-    .unwrap_or(0);
+    })?;
 
     if existing_user_count > 0 {
         return Err(ErrorBadRequest(anyhow!(
@@ -141,7 +140,7 @@ async fn finish_registration(
     req: HttpRequest,
     session: Session,
     form: Form<RegistrationCodeForm>,
-    pool: web::Data<PgPool>,
+    pool: web::Data<SqlitePool>,
 ) -> Result<HttpResponse> {
     CsrfToken::verify_from_session(&session, form.csrftoken.as_str())?;
 
@@ -194,12 +193,27 @@ async fn finish_registration(
         .await
         .map_err(|err| ErrorInternalServerError(err))?;
 
+    let email = user_registration_email.to_lowercase();
+    let userid = Uuid::new_v4();
+    sqlx::query!(
+        r#"INSERT INTO users(email, userid)
+            VALUES ($1, $2);"#,
+        email,
+        userid
+    )
+    .execute(&mut conn)
+    .await
+    .map_err(|err| {
+        error!("Error communicating with database: {}", err);
+        ErrorInternalServerError(err)
+    })?;
+
     let new_user = sqlx::query_as!(
         User,
-        "INSERT INTO users(email)
-            VALUES ($1)
-            RETURNING *;",
-        user_registration_email.to_lowercase(),
+        r#"SELECT id, userid as "userid: Uuid", email, name 
+        FROM users 
+        WHERE userid = $1;"#,
+        userid
     )
     .fetch_one(&mut conn)
     .await
@@ -268,7 +282,7 @@ pub struct LoginForm {
 async fn post_login(
     session: Session,
     form: Form<LoginForm>,
-    pool: web::Data<PgPool>,
+    pool: web::Data<SqlitePool>,
 ) -> Result<HttpResponse> {
     CsrfToken::verify_from_session(&session, form.csrftoken.as_str())?;
     LoginCode::remove(&session);
@@ -283,10 +297,10 @@ async fn post_login(
 
     let user = sqlx::query_as!(
         User,
-        "SELECT id, userid, name, email
+        r#"SELECT id, userid as "userid: Uuid", name, email
             FROM users
-            WHERE email = $1",
-        form.email.to_lowercase()
+            WHERE email = Lower($1)"#,
+        form.email
     )
     .fetch_optional(&mut conn)
     .await
@@ -381,7 +395,7 @@ async fn finish_login(
     req: HttpRequest,
     session: Session,
     form: Form<LoginCodeForm>,
-    pool: web::Data<PgPool>,
+    pool: web::Data<SqlitePool>,
 ) -> Result<HttpResponse> {
     CsrfToken::verify_from_session(&session, form.csrftoken.as_str())?;
 
@@ -469,7 +483,7 @@ struct Profile {
 
 /// Display user profie information
 #[get("/profile")]
-async fn profile(identity: Identity, pool: web::Data<PgPool>) -> actix_web::Result<Profile> {
+async fn profile(identity: Identity, pool: web::Data<SqlitePool>) -> actix_web::Result<Profile> {
     let mut conn = pool
         .get_ref()
         .acquire()

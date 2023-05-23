@@ -1,5 +1,3 @@
-use std::time::Duration;
-
 use actix_identity::IdentityMiddleware;
 use actix_session::{storage::RedisSessionStore, SessionMiddleware};
 use actix_web::{
@@ -19,7 +17,7 @@ use silly_goals::{
     routes::{auth, dashboard, webauthn_routes},
     seed_db,
 };
-use sqlx::{migrate::MigrateDatabase, postgres::PgPoolOptions, Postgres};
+use sqlx::sqlite::SqlitePool;
 use webauthn_rs::prelude::*;
 
 #[derive(Template)]
@@ -57,29 +55,33 @@ async fn main() -> Result<(), std::io::Error> {
 
     let db_url = dotenvy::var("DATABASE_URL").expect("DATABASE_URL must be set");
 
-    let pool = PgPoolOptions::new()
-        .acquire_timeout(Duration::from_secs(10))
-        .connect(&db_url.clone())
+    // if !Sqlite::database_exists(&db_url).await.unwrap_or(false) {
+    //     info!("Creating sqlite database");
+    //     Sqlite::create_database(&db_url)
+    //         .await
+    //         .expect("Could not create database");
+    // }
+
+    let pool = SqlitePool::connect(&db_url)
         .await
         .expect("Could not connect to database");
 
-    // info!("Running migrations");
-    // sqlx::migrate!("./migrations")
-    //     .set_locking(false)
-    //     .run(&pool)
-    //     .await
-    //     .map_err(|err| {
-    //         dbg!(err);
-    //         std::io::Error::new(
-    //             std::io::ErrorKind::InvalidData,
-    //             "Database migration was unsuccessful",
-    //         )
-    //     })?;
+    info!("Running migrations");
+    sqlx::migrate!("./migrations")
+        .run(&pool)
+        .await
+        .map_err(|err| {
+            dbg!(err);
+            std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                "Database migration was unsuccessful",
+            )
+        })?;
 
     info!("Seeding Database");
     seed_db(&pool).await;
 
-    let redis_uri = dotenvy::var("REDIS_URL").expect("REDIS_URI must be set");
+    let redis_uri = dotenvy::var("REDIS_URL").expect("REDIS_URL must be set");
 
     let hostname = dotenvy::var("HOSTNAME").expect("HOSTNAME must be set");
 

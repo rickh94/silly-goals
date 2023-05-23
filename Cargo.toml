@@ -14,7 +14,7 @@ tokio = "1.28"
 askama = "0.12"
 thiserror = "1.0"
 askama_actix = "0.14"
-sqlx = { version = "0.6", features = ["runtime-actix-rustls", "postgres", "macros", "json", "chrono", "offline", "uuid"]}
+sqlx = { version = "0.6", features = ["runtime-actix-rustls", "sqlite", "macros", "json", "chrono", "offline", "uuid"]}
 lettre = { version = "0.10.2", default-features = false, features = [
   "builder",
   "hostname",

@@ -7,11 +7,11 @@ use actix_web::{
 use askama::Template;
 use log::error;
 use serde::Deserialize;
-use sqlx::PgPool;
+use sqlx::{types::Json, SqlitePool};
 
 use crate::{
     csrf_token::CsrfToken, queries, DeadlineType, Goal, GoalBehavior, Group, GroupDisplay,
-    GroupLink, Tone, User,
+    GroupLink, GroupWithInfo, Tone, User,
 };
 
 mod filters {
@@ -28,15 +28,18 @@ mod filters {
         }
     }
 
-    pub fn stage_loop_comp(stage: &i16, index: &usize) -> ::askama::Result<bool> {
+    pub fn stage_loop_comp(stage: &i64, index: &usize) -> ::askama::Result<bool> {
         Ok(*stage as usize == *index)
     }
 
-    pub fn stage_text(index: &i16, stages: &Vec<String>) -> ::askama::Result<String> {
-        if stages.len() >= *index as usize {
-            Ok("unknown".into())
-        } else {
-            Ok(stages[*index as usize].clone())
+    pub fn stage_text<S: std::convert::TryInto<usize> + Clone>(
+        index: &S,
+        stages: &Vec<String>,
+    ) -> ::askama::Result<String> {
+        let index = (*index).clone();
+        match index.try_into() {
+            Ok(x) if x < stages.len() => Ok(stages[x].clone()),
+            _ => Ok("unknown".into()),
         }
     }
 }
@@ -50,7 +53,10 @@ struct Dashboard {
 }
 
 #[get("/dashboard")]
-async fn dashboard(identity: Identity, pool: web::Data<PgPool>) -> actix_web::Result<Dashboard> {
+async fn dashboard(
+    identity: Identity,
+    pool: web::Data<SqlitePool>,
+) -> actix_web::Result<Dashboard> {
     let mut conn = pool
         .get_ref()
         .acquire()
@@ -83,7 +89,7 @@ struct NewGroup {
 #[get("/groups/new")]
 async fn new_group(
     identity: Identity,
-    pool: web::Data<PgPool>,
+    pool: web::Data<SqlitePool>,
     session: Session,
 ) -> actix_web::Result<NewGroup> {
     let mut conn = pool
@@ -97,10 +103,10 @@ async fn new_group(
     let tones = sqlx::query_as!(
         Tone,
         r#"SELECT 
-        id, name, stages, deadline as "deadline: DeadlineType", global, 
+        id, name, stages as "stages: Json<Vec<String>>", deadline as "deadline: DeadlineType", global as "global: bool", 
         greeting, unmet_behavior as "unmet_behavior: GoalBehavior", user_id 
         FROM tones 
-        WHERE global = 'true' OR user_id = $1;"#,
+        WHERE global = 1 OR user_id = $1;"#,
         user.id
     )
     .fetch_all(&mut conn)
@@ -136,7 +142,7 @@ async fn post_new_group(
     identity: Identity,
     form: web::Form<NewGroupForm>,
     session: Session,
-    pool: web::Data<PgPool>,
+    pool: web::Data<SqlitePool>,
 ) -> actix_web::Result<HttpResponse> {
     CsrfToken::verify_from_session(&session, &form.csrftoken)?;
 
@@ -148,11 +154,10 @@ async fn post_new_group(
 
     let user = queries::get_user_from_identity(&mut conn, &identity).await?;
 
-    let created_group = sqlx::query_as!(
-        Group,
-        "INSERT INTO groups(title, description, tone_id, user_id) 
-        VALUES ($1, $2, $3, $4) 
-        RETURNING *;",
+    let created_group_id = sqlx::query_scalar!(
+        "INSERT INTO groups(title, description, tone_id, user_id)
+        VALUES ($1, $2, $3, $4)
+        RETURNING id;",
         form.title,
         form.description,
         form.tone_id,
@@ -166,7 +171,7 @@ async fn post_new_group(
     })?;
 
     Ok(HttpResponse::SeeOther()
-        .insert_header(("Location", format!("/groups/{}", created_group.id)))
+        .insert_header(("Location", format!("/groups/{}", created_group_id)))
         .finish())
 }
 
@@ -184,7 +189,7 @@ struct ShowGroup {
 async fn get_group(
     identity: Identity,
     path: web::Path<i64>,
-    pool: web::Data<PgPool>,
+    pool: web::Data<SqlitePool>,
 ) -> actix_web::Result<HttpResponse> {
     let group_id = path.into_inner();
     let mut conn = pool
@@ -196,13 +201,13 @@ async fn get_group(
     let user = queries::get_user_from_identity(&mut conn, &identity).await?;
 
     let group = sqlx::query_as!(
-        GroupDisplay,
+        GroupWithInfo,
         r#"SELECT 
         g.id,
         g.title, 
         g.description, 
         t.name as tone_name, 
-        t.stages as tone_stages, 
+        t.stages as "tone_stages: Json<Vec<String>>", 
         t.greeting, 
         t.unmet_behavior as "unmet_behavior: GoalBehavior", 
         t.deadline as "deadline: DeadlineType"
@@ -247,7 +252,7 @@ async fn get_group(
     let body = ShowGroup {
         title: format!("Group {} . Silly Goals", group.title),
         user,
-        group,
+        group: group.into(),
         goals_in_stages,
         groups,
     }
@@ -278,7 +283,7 @@ struct NewGoal {
 async fn new_goal(
     identity: Identity,
     path: web::Path<i64>,
-    pool: web::Data<PgPool>,
+    pool: web::Data<SqlitePool>,
     query: web::Query<InitialStage>,
     session: Session,
 ) -> actix_web::Result<HttpResponse> {
@@ -302,13 +307,13 @@ async fn new_goal(
     .map_err(ErrorInternalServerError)?;
 
     let group = sqlx::query_as!(
-        GroupDisplay,
+        GroupWithInfo,
         r#"SELECT 
         g.id,
         g.title, 
         g.description, 
         t.name as tone_name, 
-        t.stages as tone_stages, 
+        t.stages as "tone_stages: Json<Vec<String>>", 
         t.greeting, 
         t.unmet_behavior as "unmet_behavior: GoalBehavior", 
         t.deadline as "deadline: DeadlineType"
@@ -346,7 +351,7 @@ async fn new_goal(
     let body = NewGoal {
         title: format!("Group {} . Silly Goals", group.title),
         user,
-        group,
+        group: group.into(),
         goals_in_stages,
         selected_stage,
         csrf_token,
@@ -373,7 +378,7 @@ async fn post_new_goal(
     path: web::Path<i64>,
     form: web::Form<NewGoalForm>,
     session: Session,
-    pool: web::Data<PgPool>,
+    pool: web::Data<SqlitePool>,
 ) -> actix_web::Result<HttpResponse> {
     CsrfToken::verify_from_session(&session, &form.csrftoken)?;
     let group_id = path.into_inner();
@@ -400,18 +405,16 @@ async fn post_new_goal(
         e => ErrorInternalServerError(e),
     })?;
 
-    sqlx::query_as!(
-        Goal,
+    sqlx::query!(
         "INSERT INTO goals(title, description, stage, deadline, group_id) 
-        VALUES ($1, $2, $3, $4, $5)
-        RETURNING *;",
+        VALUES ($1, $2, $3, $4, $5)",
         form.title,
         form.description,
         form.stage,
         form.deadline,
         group.id,
     )
-    .fetch_one(&mut conn)
+    .execute(&mut conn)
     .await
     .map_err(ErrorInternalServerError)?;
 
@@ -435,7 +438,7 @@ struct ShowGoal {
 async fn get_goal(
     identity: Identity,
     path: web::Path<(i64, i64)>,
-    pool: web::Data<PgPool>,
+    pool: web::Data<SqlitePool>,
 ) -> actix_web::Result<HttpResponse> {
     let (group_id, goal_id) = path.into_inner();
     let mut conn = pool
@@ -447,13 +450,13 @@ async fn get_goal(
     let user = queries::get_user_from_identity(&mut conn, &identity).await?;
 
     let group = sqlx::query_as!(
-        GroupDisplay,
+        GroupWithInfo,
         r#"SELECT 
         g.id,
         g.title, 
         g.description, 
         t.name as tone_name, 
-        t.stages as tone_stages, 
+        t.stages as "tone_stages: Json<Vec<String>>", 
         t.greeting, 
         t.unmet_behavior as "unmet_behavior: GoalBehavior", 
         t.deadline as "deadline: DeadlineType"
@@ -509,7 +512,7 @@ async fn get_goal(
         title: format!("Group {} . Silly Goals", group.title),
         user,
         goal,
-        group,
+        group: group.into(),
         goals_in_stages,
         groups,
     }
@@ -535,7 +538,7 @@ struct EditGoal {
 async fn edit_goal(
     identity: Identity,
     path: web::Path<(i64, i64)>,
-    pool: web::Data<PgPool>,
+    pool: web::Data<SqlitePool>,
     session: Session,
 ) -> actix_web::Result<HttpResponse> {
     let (group_id, goal_id) = path.into_inner();
@@ -548,13 +551,13 @@ async fn edit_goal(
     let user = queries::get_user_from_identity(&mut conn, &identity).await?;
 
     let group = sqlx::query_as!(
-        GroupDisplay,
+        GroupWithInfo,
         r#"SELECT 
         g.id,
         g.title, 
         g.description, 
         t.name as tone_name, 
-        t.stages as tone_stages, 
+        t.stages as "tone_stages: Json<Vec<String>>", 
         t.greeting, 
         t.unmet_behavior as "unmet_behavior: GoalBehavior", 
         t.deadline as "deadline: DeadlineType"
@@ -611,7 +614,7 @@ async fn edit_goal(
     let body = EditGoal {
         title: format!("Group {} . Silly Goals", group.title),
         user,
-        group,
+        group: group.into(),
         goals_in_stages,
         csrf_token,
         goal,
@@ -638,7 +641,7 @@ async fn post_edit_goal(
     path: web::Path<(i64, i64)>,
     form: web::Form<EditGoalForm>,
     session: Session,
-    pool: web::Data<PgPool>,
+    pool: web::Data<SqlitePool>,
 ) -> actix_web::Result<HttpResponse> {
     CsrfToken::verify_from_session(&session, &form.csrftoken)?;
     let (group_id, goal_id) = path.into_inner();
@@ -665,14 +668,12 @@ async fn post_edit_goal(
         e => ErrorInternalServerError(e),
     })?;
 
-    sqlx::query_as!(
-        Goal,
+    sqlx::query!(
         "UPDATE goals
         SET (title, description, stage, deadline) =
         ($1, $2, $3, $4)
         WHERE 
-        id = $5 AND group_id = $6
-        RETURNING *;",
+        id = $5 AND group_id = $6;",
         form.title,
         form.description,
         form.stage,
@@ -680,7 +681,7 @@ async fn post_edit_goal(
         goal_id,
         group.id,
     )
-    .fetch_one(&mut conn)
+    .execute(&mut conn)
     .await
     .map_err(ErrorInternalServerError)?;
 

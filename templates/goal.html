@@ -1,6 +1,7 @@
 {% extends "internal.html" %}
 {% block content %}
 {% include "partials/_group_display.html" %}
+<script src="/static/display-date.js"></script>
 <div class="relative z-10" aria-labelledby="modal-title" role="dialog" aria-modal="true"
   x-transition:enter="ease-out duration-100" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
   x-transition:leave="ease-in duration-100" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
@@ -34,8 +35,8 @@
               {% if let Some(deadline) = goal.deadline %}
               <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4">
                 <dt class="text-sm font-medium leading-6 text-gray-900">Deadline</dt>
-                <dd class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0"><time
-                    datetime="{{ deadline }}">{{ deadline }}</time></dd>
+                <dd class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0"
+                  ><time datetime="{{ deadline }}" x-text="displayDate('{{ deadline }}')"></time></dd>
               </div>
               {% endif %}
               <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4">

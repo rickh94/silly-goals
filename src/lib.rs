@@ -14,9 +14,10 @@ use actix_web::{
 use anyhow::{anyhow, Result};
 use log::error;
 use serde::{Deserialize, Serialize};
+use serde_json::{json, Value};
 use sqlx::{
-    types::{chrono, Uuid},
-    PgPool, Postgres, QueryBuilder,
+    types::{Json, Uuid},
+    QueryBuilder, Sqlite, SqlitePool,
 };
 use webauthn_rs::prelude::PasskeyRegistration;
 
@@ -84,7 +85,7 @@ pub struct Tone {
     pub name: String,
     pub user_id: i64,
     pub global: bool,
-    pub stages: Vec<String>,
+    pub stages: Json<Vec<String>>,
     pub greeting: String,
     pub unmet_behavior: GoalBehavior,
     pub deadline: DeadlineType,
@@ -100,6 +101,18 @@ pub struct Group {
 }
 
 #[derive(Clone, Debug)]
+pub struct GroupWithInfo {
+    pub id: i64,
+    pub title: String,
+    pub description: Option<String>,
+    pub tone_name: String,
+    pub tone_stages: Json<Vec<String>>,
+    pub greeting: String,
+    pub unmet_behavior: GoalBehavior,
+    pub deadline: DeadlineType,
+}
+
+#[derive(Clone, Debug)]
 pub struct GroupDisplay {
     pub id: i64,
     pub title: String,
@@ -109,6 +122,25 @@ pub struct GroupDisplay {
     pub greeting: String,
     pub unmet_behavior: GoalBehavior,
     pub deadline: DeadlineType,
+}
+
+impl From<GroupWithInfo> for GroupDisplay {
+    fn from(value: GroupWithInfo) -> Self {
+        Self {
+            id: value.id,
+            title: value.title,
+            description: value.description,
+            tone_name: value.tone_name,
+            tone_stages: value
+                .tone_stages
+                .iter()
+                .map(|s| s.clone())
+                .collect::<Vec<String>>(),
+            greeting: value.greeting,
+            unmet_behavior: value.unmet_behavior,
+            deadline: value.deadline,
+        }
+    }
 }
 
 #[derive(Debug, Deserialize)]
@@ -122,9 +154,9 @@ pub struct Goal {
     pub id: i64,
     pub title: String,
     pub description: Option<String>,
-    pub stage: i16,
+    pub stage: i64,
     pub group_id: i64,
-    pub deadline: Option<chrono::NaiveDate>,
+    pub deadline: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -134,32 +166,45 @@ pub struct WebauthnCredential {
     pub passkey: String,
 }
 
-pub async fn seed_db(pool: &PgPool) {
+pub async fn seed_db(pool: &SqlitePool) {
     let mut conn = pool.acquire().await.expect("to connect to database");
+    let email = "rickhenry@rickhenry.dev";
     let admin_user = if let Ok(Some(u)) = sqlx::query_as!(
         User,
-        "SELECT id, name, email, userid FROM users WHERE email = $1",
-        "rickhenry@rickhenry.dev".into()
+        r#"SELECT id, name, email, userid as "userid: Uuid" FROM users WHERE email = $1"#,
+        email
     )
     .fetch_optional(&mut conn)
     .await
     {
         u
     } else {
+        let userid = Uuid::new_v4();
+        let name = Some("Rick Henry".to_string());
+        sqlx::query!(
+            r#"INSERT INTO users(name, email, userid)
+            VALUES ($1, $2, $3);"#,
+            name,
+            email,
+            userid,
+        )
+        .execute(&mut conn)
+        .await
+        .expect("user to be created");
+
         sqlx::query_as!(
             User,
-            "INSERT INTO users(name, email) VALUES ($1, $2) RETURNING *;",
-            "Rick Henry".into(),
-            "rickhenry@rickhenry.dev".into(),
+            r#"SELECT id, name, email, userid as "userid: Uuid" FROM users WHERE userid = $1"#,
+            userid
         )
         .fetch_one(&mut conn)
         .await
-        .expect("user to be created")
+        .expect("new user to exist")
     };
 
     struct GlobalTone {
         name: String,
-        stages: Vec<String>,
+        stages: Value,
         greeting: String,
         unmet_behavior: GoalBehavior,
         deadline: DeadlineType,
@@ -168,80 +213,86 @@ pub async fn seed_db(pool: &PgPool) {
     let global_tones = vec![
         GlobalTone {
             name: "Gentle".into(),
-            stages: vec![
-                "Idea".into(),
-                "Getting Going".into(),
-                "Almost there!".into(),
-                "Yayyyy".into(),
-            ],
+            stages: json!([
+                "Idea".to_string(),
+                "Getting Going".to_string(),
+                "Almost there!".to_string(),
+                "Yayyyy".to_string(),
+            ]),
             greeting: "Welcome back!! Good job checking in today!".into(),
             unmet_behavior: GoalBehavior::Hide,
             deadline: DeadlineType::Off,
         },
         GlobalTone {
             name: "Business (silly)".into(),
-            stages: vec![
-                "Brainstorming".into(),
-                "\"Almost Done\"".into(),
-                "Actually Almost Done".into(),
-                "Eh good enough".into(),
-            ],
+            stages: json!([
+                "Brainstorming".to_string(),
+                "\"Almost Done\"".to_string(),
+                "Actually Almost Done".to_string(),
+                "Eh good enough".to_string(),
+            ]),
             greeting: "Get ready to synergize your goals in order to up-level your growth".into(),
             unmet_behavior: GoalBehavior::Nice,
             deadline: DeadlineType::Soft,
         },
         GlobalTone {
             name: "Serious".into(),
-            stages: vec![
-                "Queued".into(),
-                "In Progress".into(),
-                "Finishing Touches".into(),
-                "Completed".into(),
-            ],
+            stages: json!([
+                "Queued".to_string(),
+                "In Progress".to_string(),
+                "Finishing Touches".to_string(),
+                "Completed".to_string(),
+            ]),
             greeting: "Welcome to your goal tracker".into(),
             unmet_behavior: GoalBehavior::Nice,
             deadline: DeadlineType::Hard,
         },
         GlobalTone {
             name: "Snarky".into(),
-            stages: vec![
-                "You Lazy?".into(),
-                "Woah you started".into(),
-                "Not done yet?".into(),
-                "Oh finally???".into(),
-            ],
+            stages: json!([
+                "You Lazy?".to_string(),
+                "Woah you started".to_string(),
+                "Not done yet?".to_string(),
+                "Oh finally???".to_string(),
+            ]),
             greeting: "Wow you actually signed in to check. Way to go/s".into(),
             unmet_behavior: GoalBehavior::Mean,
             deadline: DeadlineType::Hard,
         },
         GlobalTone {
             name: "Boring".into(),
-            stages: vec![
-                "stage 1".into(),
-                "stage 2".into(),
-                "stage 3".into(),
-                "stage 4".into(),
-            ],
+            stages: json!([
+                "stage 1".to_string(),
+                "stage 2".to_string(),
+                "stage 3".to_string(),
+                "stage 4".to_string(),
+            ]),
             greeting: "[insert greeting]".into(),
             unmet_behavior: GoalBehavior::Nice,
             deadline: DeadlineType::Soft,
         },
         GlobalTone {
             name: "Just Colors".into(),
-            stages: vec!["red".into(), "yellow".into(), "blue".into(), "green".into()],
+            stages: json!([
+                "red".to_string(),
+                "yellow".to_string(),
+                "blue".to_string(),
+                "green".to_string()
+            ]),
             greeting: "Rainbow!".into(),
             unmet_behavior: GoalBehavior::Nice,
             deadline: DeadlineType::Soft,
         },
     ];
 
-    if sqlx::query!("SELECT id FROM tones WHERE name = $1;", "Gentle".into())
+    let gentle = "Gentle".to_string();
+    if sqlx::query!("SELECT id FROM tones WHERE name = $1;", gentle)
         .fetch_optional(&mut conn)
         .await
         .expect("to connect to database")
         .is_none()
     {
-        let mut query_builder: QueryBuilder<Postgres> = QueryBuilder::new(
+        let mut query_builder: QueryBuilder<Sqlite> = QueryBuilder::new(
             "INSERT INTO tones(name, user_id, global, stages, greeting, deadline, unmet_behavior)",
         );
 

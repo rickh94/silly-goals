@@ -11,3 +11,5 @@ dump.rdb
 Secrets.toml
 Secrets.dev.toml
 
+litestream.yml
+*.db

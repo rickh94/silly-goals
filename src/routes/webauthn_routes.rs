@@ -8,7 +8,7 @@ use actix_web::{
 };
 use log::{debug, error};
 use serde::{Deserialize, Serialize};
-use sqlx::PgPool;
+use sqlx::{types::Uuid, SqlitePool};
 use webauthn_rs::prelude::*;
 
 use crate::{queries, session_values::LoginEmail, SessionValue, WebauthnCredential};
@@ -18,7 +18,7 @@ async fn start_registration(
     identity: Identity,
     session: Session,
     webauthn: web::Data<Webauthn>,
-    pool: web::Data<PgPool>,
+    pool: web::Data<SqlitePool>,
 ) -> actix_web::Result<HttpResponse> {
     PasskeyRegistration::remove(&session);
 
@@ -32,9 +32,9 @@ async fn start_registration(
 
     let allow_credential_items = sqlx::query_as!(
         WebauthnCredential,
-        "SELECT id, user_id, passkey
+        r#"SELECT id as "id: Uuid", user_id, passkey
         FROM webauthn_credentials
-        WHERE user_id = $1",
+        WHERE user_id = $1"#,
         user.id,
     )
     .fetch_all(&mut conn)
@@ -70,7 +70,7 @@ async fn finish_registration(
     identity: Identity,
     session: Session,
     webauthn: web::Data<Webauthn>,
-    pool: web::Data<PgPool>,
+    pool: web::Data<SqlitePool>,
 ) -> actix_web::Result<HttpResponse> {
     let reg_state = PasskeyRegistration::get(&session)
         .map_err(ErrorInternalServerError)?
@@ -94,9 +94,12 @@ async fn finish_registration(
         error!("Could not save passkey, {}", err);
         ErrorInternalServerError(err)
     })?;
+
+    let credential_id = Uuid::new_v4();
     sqlx::query!(
-        "INSERT INTO webauthn_credentials(user_id, passkey)
-        VALUES ($1, $2);",
+        "INSERT INTO webauthn_credentials(id, user_id, passkey)
+        VALUES ($1, $2, $3);",
+        credential_id,
         user.id,
         sk_json,
     )
@@ -124,7 +127,7 @@ impl SessionValue for AuthState {
 
 #[get("/webauthn/login")]
 async fn start_login(
-    pool: web::Data<PgPool>,
+    pool: web::Data<SqlitePool>,
     session: Session,
     webauthn: web::Data<Webauthn>,
 ) -> actix_web::Result<HttpResponse> {
@@ -149,7 +152,9 @@ async fn start_login(
 
     let allow_credential_items = sqlx::query_as!(
         WebauthnCredential,
-        "SELECT * FROM webauthn_credentials WHERE user_id = $1;",
+        r#"SELECT id as "id: Uuid", user_id, passkey 
+        FROM webauthn_credentials 
+        WHERE user_id = $1;"#,
         user.id,
     )
     .fetch_all(&mut conn)
