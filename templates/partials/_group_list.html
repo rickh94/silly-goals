@@ -2,7 +2,7 @@
 <h2 class="font-bold text-3xl mb-4 mx-4  text-zinc-800">Goal Groups</h2>
 <ul role="list" class="pl-4 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
   {% for group in groups %}
-  <li class="col-span-1 divide-y divide-zinc-200 rounded-lg bg-white border-indigo-200 border shadow">
+  <li class="col-span-1 divide-y divide-zinc-200 rounded-lg bg-white border-violet-200 border shadow">
     <div class="flex w-full items-center justify-between space-x-6 p-6">
       <div class="flex-1 truncate">
         <div class="flex items-center space-x-3">
@@ -28,7 +28,7 @@
         </div>
         <div class="-ml-px flex w-0 flex-1">
           <a href="/groups/{{ group.id }}"
-            class="relative bg-indigo-600 text-white inline-flex w-0 flex-1 items-center justify-center gap-x-3 rounded-br-lg border border-transparent py-4 text-sm font-semibold">
+            class="relative bg-violet-600 text-white inline-flex w-0 flex-1 items-center justify-center gap-x-3 rounded-br-lg border border-transparent py-4 text-sm font-semibold">
 
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
               class="h-5 w-5 text-zinc-50">
@@ -43,7 +43,7 @@
   </li>
   {% endfor %}
   <li
-    class="col-span-1 divide-y divide-zinc-200 rounded-lg bg-white border-indigo-400 border border-dashed text-indigo-600">
+    class="col-span-1 divide-y divide-zinc-200 rounded-lg bg-white border-violet-400 border border-dashed text-violet-600">
     <a href="/groups/new" class="h-full w-full flex justify-between items-center p-6">
       <div class="flex-col flex">
         <div class="flex items-center space-x-2">

@@ -471,6 +471,8 @@ async fn logout(identity: Identity) -> HttpResponse {
         .finish()
 }
 
+// TODO:  implement profile delete with cascading
+
 #[derive(Template)]
 #[template(path = "profile.html")]
 struct Profile {

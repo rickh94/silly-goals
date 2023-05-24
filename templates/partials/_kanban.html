@@ -17,7 +17,7 @@
           @dragend="dragging = false" data-goal-id="{{goal.id}}" data-stage="{{loop.index0}}"
           data-group-id="{{group.id}}" :class="dragging ? 'cursor-grabbing' : 'cursor-grab'" x-show="!dragging"
           href="/groups/{{group.id}}/goals/{{goal.id}}"
-          class="relative flex items-center space-x-3 rounded border border-gray-300 bg-white px-3 py-2 shadow-sm focus-within:ring-2 focus-within:ring-indigo-500 focus-within:ring-offset-2 hover:border-gray-400"
+          class="relative flex items-center space-x-3 rounded border border-gray-300 bg-white px-3 py-2 shadow-sm focus-within:ring-2 focus-within:ring-violet-500 focus-within:ring-offset-2 hover:border-gray-400"
           id="goal-{{goal.id}}">
           <div class="min-w-0 flex-1">
             <span class="absolute inset-0" aria-hidden="true"></span>
@@ -30,7 +30,7 @@
         {% endfor %}
         <!-- TODO: push this to the bottom on the list maybe -->
         <a href="/groups/{{ group.id }}/goals/new?stage={{ loop.index0 }}" draggable="false"
-          class="relative flex items-center space-x-3 rounded border border-dashed border-gray-300 bg-white px-3 py-2 shadow-sm focus-within:ring-2 focus-within:ring-indigo-500 focus-within:ring-offset-2 hover:border-gray-400 mt-auto">
+          class="relative flex items-center space-x-3 rounded border border-dashed border-gray-300 bg-white px-3 py-2 shadow-sm focus-within:ring-2 focus-within:ring-violet-500 focus-within:ring-offset-2 hover:border-gray-400 mt-auto">
           <div class="min-w-0 flex-1">
             <span class="absolute inset-0" aria-hidden="true"></span>
             <p class="text-sm font-medium text-gray-900">Add a Goal</p>

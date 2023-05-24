@@ -30,8 +30,7 @@
         <!-- Sidebar component, swap this element with another sidebar if you like -->
         <div class="flex grow flex-col gap-y-5 overflow-y-auto bg-zinc-900 px-6 pb-2 ring-1 ring-white/10">
           <div class="flex h-16 shrink-0 items-center">
-            <img class="h-8 w-auto" src="https://tailwindui.com/img/logos/mark.svg?color=indigo&shade=500"
-              alt="Your Company">
+            {% include "partials/_logo.html" %}
           </div>
           <nav class="flex flex-1 flex-col">
             <ul role="list" class="flex flex-1 flex-col gap-y-7">
@@ -67,8 +66,7 @@
     <div class="flex grow flex-col gap-y-5 overflow-y-auto bg-zinc-900 px-6">
       <div class="flex h-16 shrink-0 items-center">
         <!-- Change logo -->
-        <img class="h-8 w-auto" src="https://tailwindui.com/img/logos/mark.svg?color=indigo&shade=500"
-          alt="Your Company">
+        {% include "partials/_logo.html" %}
       </div>
       <!-- Templated from same as above -->
       <nav class="flex flex-1 flex-col">
