@@ -1,8 +1,11 @@
+
 FROM rust:1 as builder
 
 WORKDIR /app
 COPY . .
-RUN cargo install --path .
+RUN --mount=type=cache,target=/usr/local/cargo/registry \
+    --mount=type=cache,target=/app/target \
+    cargo install --path .
 
 
 FROM debian:bullseye-slim
