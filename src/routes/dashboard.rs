@@ -1,8 +1,8 @@
 use actix_identity::Identity;
 use actix_session::Session;
 use actix_web::{
-    error::{ErrorInternalServerError, ErrorNotFound},
-    get, post, web, HttpResponse,
+    error::{ErrorBadRequest, ErrorInternalServerError, ErrorNotFound},
+    get, patch, post, web, HttpResponse,
 };
 use askama::Template;
 use log::error;
@@ -25,6 +25,19 @@ mod filters {
             2 => Ok("bg-sky-500"),
             3 => Ok("bg-emerald-500"),
             _ => Ok("bg-gray-500"),
+        }
+    }
+
+    pub fn stage_color_light<S: PartialEq + std::convert::TryInto<usize> + Clone>(
+        s: &S,
+    ) -> ::askama::Result<&'static str> {
+        let s = (*s).clone();
+        match s.try_into().unwrap_or(5) {
+            0 => Ok("bg-rose-200"),
+            1 => Ok("bg-amber-200"),
+            2 => Ok("bg-sky-200"),
+            3 => Ok("bg-emerald-200"),
+            _ => Ok("bg-gray-200"),
         }
     }
 
@@ -130,7 +143,7 @@ async fn new_group(
 }
 
 #[derive(Deserialize)]
-struct NewGroupForm {
+struct GroupForm {
     title: String,
     description: Option<String>,
     tone_id: i64,
@@ -140,7 +153,7 @@ struct NewGroupForm {
 #[post("/groups/new")]
 async fn post_new_group(
     identity: Identity,
-    form: web::Form<NewGroupForm>,
+    form: web::Form<GroupForm>,
     session: Session,
     pool: web::Data<SqlitePool>,
 ) -> actix_web::Result<HttpResponse> {
@@ -172,6 +185,127 @@ async fn post_new_group(
 
     Ok(HttpResponse::SeeOther()
         .insert_header(("Location", format!("/groups/{}", created_group_id)))
+        .finish())
+}
+
+#[derive(Template)]
+#[template(path = "edit_group.html")]
+struct EditGroup {
+    title: String,
+    user: User,
+    group: Group,
+    groups: Vec<Group>,
+    tones: Vec<Tone>,
+    csrf_token: CsrfToken,
+}
+
+#[get("/groups/{id}/edit")]
+async fn edit_group(
+    identity: Identity,
+    path: web::Path<i64>,
+    pool: web::Data<SqlitePool>,
+    session: Session,
+) -> actix_web::Result<HttpResponse> {
+    let group_id = path.into_inner();
+    let mut conn = pool
+        .get_ref()
+        .acquire()
+        .await
+        .map_err(ErrorInternalServerError)?;
+
+    let user = queries::get_user_from_identity(&mut conn, &identity).await?;
+
+    let group = sqlx::query_as!(
+        Group,
+        r#"SELECT 
+        id,
+        title,
+        description,
+        tone_id,
+        user_id
+        FROM groups
+        WHERE user_id = $1 AND id = $2;"#,
+        user.id,
+        group_id
+    )
+    .fetch_one(&mut conn)
+    .await
+    .map_err(|err| match err {
+        sqlx::Error::RowNotFound => ErrorNotFound(err),
+        e => ErrorInternalServerError(e),
+    })?;
+
+    let groups = sqlx::query_as!(Group, "SELECT * FROM groups WHERE user_id = $1", user.id)
+        .fetch_all(&mut conn)
+        .await
+        .map_err(ErrorInternalServerError)?;
+
+    let csrf_token = CsrfToken::get_or_create(&session)?;
+
+    let tones = sqlx::query_as!(
+        Tone,
+        r#"SELECT 
+        id, name, stages as "stages: Json<Vec<String>>", deadline as "deadline: DeadlineType", global as "global: bool", 
+        greeting, unmet_behavior as "unmet_behavior: GoalBehavior", user_id 
+        FROM tones 
+        WHERE global = 1 OR user_id = $1;"#,
+        user.id
+    )
+    .fetch_all(&mut conn)
+    .await
+    .map_err(ErrorInternalServerError)?;
+
+    let body = EditGroup {
+        title: format!("Group {} . Silly Goals", group.title),
+        user,
+        group,
+        groups,
+        csrf_token,
+        tones,
+    }
+    .render()
+    .map_err(ErrorInternalServerError)?;
+
+    Ok(HttpResponse::Ok().body(body))
+}
+
+#[post("/groups/{id}/edit")]
+async fn post_edit_group(
+    identity: Identity,
+    path: web::Path<i64>,
+    form: web::Form<GroupForm>,
+    session: Session,
+    pool: web::Data<SqlitePool>,
+) -> actix_web::Result<HttpResponse> {
+    CsrfToken::verify_from_session(&session, &form.csrftoken)?;
+    let group_id = path.into_inner();
+
+    let mut conn = pool
+        .get_ref()
+        .acquire()
+        .await
+        .map_err(ErrorInternalServerError)?;
+
+    let user = queries::get_user_from_identity(&mut conn, &identity).await?;
+
+    sqlx::query!(
+        "UPDATE groups
+        SET 
+        title = $1, description = $2, tone_id = $3
+        WHERE 
+        id = $4 AND user_id = $5;",
+        form.title,
+        form.description,
+        form.tone_id,
+        group_id,
+        user.id,
+    )
+    .execute(&mut conn)
+    .await
+    .map_err(ErrorInternalServerError)?;
+
+    Ok(HttpResponse::SeeOther()
+        .insert_header(("Location", "/dashboard"))
         .finish())
 }
 
@@ -688,4 +822,63 @@ async fn post_edit_goal(
     Ok(HttpResponse::SeeOther()
         .insert_header(("Location", format!("/groups/{}", group_id)))
         .finish())
+}
+
+#[derive(Debug, Deserialize)]
+struct NewStage {
+    stage: i64,
+}
+
+#[patch("/groups/{group_id}/goals/{goal_id}/stage")]
+async fn patch_goal_tone(
+    identity: Identity,
+    path: web::Path<(i64, i64)>,
+    query: web::Query<NewStage>,
+    pool: web::Data<SqlitePool>,
+) -> actix_web::Result<HttpResponse> {
+    let (group_id, goal_id) = path.into_inner();
+
+    let mut conn = pool
+        .get_ref()
+        .acquire()
+        .await
+        .map_err(ErrorInternalServerError)?;
+
+    let user = queries::get_user_from_identity(&mut conn, &identity).await?;
+
+    // We don't need the group, but we need to validate that the user owns it
+    sqlx::query!(
+        r#"SELECT id FROM groups 
+        WHERE user_id = $1 AND id = $2;"#,
+        user.id,
+        group_id
+    )
+    .fetch_one(&mut conn)
+    .await
+    .map_err(|err| match err {
+        sqlx::Error::RowNotFound => ErrorNotFound(err),
+        e => ErrorInternalServerError(e),
+    })?;
+
+    if query.stage > 4 || query.stage < 0 {
+        return Err(ErrorBadRequest("Stage must be between 0 and 4"));
+    }
+
+    sqlx::query!(
+        "UPDATE goals
+        SET stage = $1 
+        WHERE 
+        id = $2 AND group_id = $3;",
+        query.stage,
+        goal_id,
+        group_id,
+    )
+    .execute(&mut conn)
+    .await
+    .map_err(|err| {
+        error!("Could not update database");
+        ErrorInternalServerError(err)
+    })?;
+
+    Ok(HttpResponse::Ok().finish())
 }

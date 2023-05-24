@@ -1,0 +1,44 @@
+<script src="/static/drag-goal.js"></script>
+<div class="px-2 grid grid-rows-4 md:grid-rows-1 md:grid-cols-4 gap-1 md:mt-10" id="kanban">
+  {% for stage in group.tone_stages %}
+  <div class="overflow-hidden rounded border h-auto {{ loop.index0|stage_color_light }}" data-stage="{{ loop.index0 }}"
+    @drop="adding = false; updateGoalStage($event, $el)" x-data="{adding: false}" @dragover.prevent="adding = true"
+    @dragleave.prevent="adding = false"
+    :class="adding ? 'shadow-blue-100 shadow-lg border-blue-800' : 'shadow border-zinc-100'" id="stage-{{loop.index0}}">
+    <div class="px-2 pt-2 pb-4 flex flex-col space-y-2">
+      <div class="flex justify-center">
+        <h2 class="font-bold text-xl w-auto text-center px-0 py-2 text-zinc-900">
+          {{stage}}</h2>
+      </div>
+      <div class="flex flex-col space-y-2 goal-list">
+        {% for goal in goals_in_stages[loop.index0] %}
+        <!-- Goal Card -->
+        <a draggable="true" x-data="{ dragging: false }" @dragstart="dragging = true; startDragging($event, $el)"
+          @dragend="dragging = false" data-goal-id="{{goal.id}}" data-stage="{{loop.index0}}"
+          data-group-id="{{group.id}}" :class="dragging ? 'cursor-grabbing' : 'cursor-grab'" x-show="!dragging"
+          href="/groups/{{group.id}}/goals/{{goal.id}}"
+          class="relative flex items-center space-x-3 rounded border border-gray-300 bg-white px-3 py-2 shadow-sm focus-within:ring-2 focus-within:ring-indigo-500 focus-within:ring-offset-2 hover:border-gray-400"
+          id="goal-{{goal.id}}">
+          <div class="min-w-0 flex-1">
+            <span class="absolute inset-0" aria-hidden="true"></span>
+            <p class="text-sm font-medium text-gray-900">{{goal.title}}</p>
+            {% if let Some(desc) = goal.description %}
+            <p class="truncate text-sm text-gray-500">{{desc}}</p>
+            {% endif %}
+          </div>
+        </a>
+        {% endfor %}
+        <!-- TODO: push this to the bottom on the list maybe -->
+        <a href="/groups/{{ group.id }}/goals/new?stage={{ loop.index0 }}" draggable="false"
+          class="relative flex items-center space-x-3 rounded border border-dashed border-gray-300 bg-white px-3 py-2 shadow-sm focus-within:ring-2 focus-within:ring-indigo-500 focus-within:ring-offset-2 hover:border-gray-400 mt-auto">
+          <div class="min-w-0 flex-1">
+            <span class="absolute inset-0" aria-hidden="true"></span>
+            <p class="text-sm font-medium text-gray-900">Add a Goal</p>
+            <p class="truncate text-sm text-gray-500">to &quot;{{stage}}&quot;</p>
+          </div>
+        </a>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>

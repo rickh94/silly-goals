@@ -81,15 +81,16 @@ Goal tracking application, but with attitude to be less boring and pressury.
 
 ## Features
 
-- [ ] Setting of sassiness mode, global default and per-category
-- [ ] Categories of goals
-- [ ] User auth with webauthn
+- [x] Setting of sassiness mode, and per-group
+- [x] Categories of goals
+- [x] User auth with webauthn
 - [ ] Light and Dark mode
 - [ ] Font options
-- [ ] optional deadlines
-- [ ] CRUD
-  - [ ] update changing stage of thing (number)
-  - [ ] update name of thing
+- [x] drag and drop kanban
+- [x] optional deadlines
+- [x] CRUD
+  - [x] update changing stage of thing (number)
+  - [x] update name of thing
 
 ## Tables
 

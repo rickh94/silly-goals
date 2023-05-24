@@ -471,8 +471,6 @@ async fn logout(identity: Identity) -> HttpResponse {
         .finish()
 }
 
-// TODO: webauthn registration
-
 #[derive(Template)]
 #[template(path = "profile.html")]
 struct Profile {

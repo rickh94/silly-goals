@@ -125,6 +125,12 @@ async fn main() -> Result<(), std::io::Error> {
         .await
         .expect("to connect to redis store");
 
+    let bind_address = if dotenvy::var("DEBUG").is_ok() {
+        "127.0.0.1"
+    } else {
+        "0.0.0.0"
+    };
+
     info!("Creating server");
     HttpServer::new(move || {
         let generated = generate();
@@ -154,19 +160,22 @@ async fn main() -> Result<(), std::io::Error> {
             .service(dashboard::dashboard)
             .service(dashboard::new_group)
             .service(dashboard::post_new_group)
+            .service(dashboard::edit_group)
+            .service(dashboard::post_edit_group)
             .service(dashboard::get_group)
             .service(dashboard::new_goal)
             .service(dashboard::post_new_goal)
             .service(dashboard::get_goal)
             .service(dashboard::edit_goal)
             .service(dashboard::post_edit_goal)
+            .service(dashboard::patch_goal_tone)
             .service(webauthn_routes::start_registration)
             .service(webauthn_routes::finish_registration)
             .service(webauthn_routes::start_login)
             .service(webauthn_routes::finish_login)
             .service(index)
     })
-    .bind(("0.0.0.0", 8000))?
+    .bind((bind_address, 8000))?
     .run()
     .await
 }

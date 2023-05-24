@@ -1,6 +1,4 @@
 <div x-data="{ navOpen: false }">
-  <!-- TODO: show groups in sidebar nav -->
-  <!-- Off-canvas menu for mobile, show/hide based on off-canvas menu state. -->
   <div x-show="navOpen" class="relative z-50 lg:hidden" role="dialog" aria-modal="true"
     x-transition:enter="transition-opacity ease-linear duration-200" x-transition:enter-start="opacity-0"
     x-transition:enter-end="opacity-100" x-transition:leave="transition-opacity ease-linear duration-200"
@@ -42,42 +40,18 @@
                   <li>
                     <!-- Current: "bg-zinc-800 text-white", Default: "text-zinc-400 hover:text-white hover:bg-zinc-800" -->
                     <a href="/dashboard"
-                      class="bg-zinc-800 text-white group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold">
-                      Dashboard
+                      :class="window.location.pathname === new URL($el.href).pathname ? 'bg-zinc-800 text-white' : 'text-zinc-400 hover:text-white hover:bg-zinc-800'"
+                      class="group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold">Dashboard
                     </a>
                   </li>
                   {% for group in groups %}
                   <li>
                     <a href="/groups/{{ group.id }}"
-                      class="text-zinc-400 hover:text-white hover:bg-zinc-800 group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold">
-                      {{ group.title }}
-                    </a>
+                      :class="window.location.pathname === new URL($el.href).pathname ? 'bg-zinc-800 text-white' : 'text-zinc-400 hover:text-white hover:bg-zinc-800'"
+                      class="group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold">{{
+                      group.title }}</a>
                   </li>
                   {% endfor %}
-                </ul>
-              </li>
-              <li>
-                <div class="text-xs font-semibold leading-6 text-zinc-400">
-                  Custom Configs</div>
-                <ul role="list" class="-mx-2 mt-2 space-y-1">
-                  <li>
-                    <!-- Current: "bg-zinc-800 text-white", Default: "text-zinc-400 hover:text-white hover:bg-zinc-800" -->
-                    <a href="#"
-                      class="text-zinc-400 hover:text-white hover:bg-zinc-800 group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold">
-                      <span
-                        class="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border border-zinc-700 bg-zinc-800 text-[0.625rem] font-medium text-zinc-400 group-hover:text-white">P</span>
-                      <span class="truncate">Project</span>
-                    </a>
-                  </li>
-                  <li>
-                    <!-- Current: "bg-zinc-800 text-white", Default: "text-zinc-400 hover:text-white hover:bg-zinc-800" -->
-                    <a href="#"
-                      class="text-zinc-400 hover:text-white hover:bg-zinc-800 group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold">
-                      <span
-                        class="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border border-zinc-700 bg-zinc-800 text-[0.625rem] font-medium text-zinc-400 group-hover:text-white">P</span>
-                      <span class="truncate">Create</span>
-                    </a>
-                  </li>
                 </ul>
               </li>
             </ul>
@@ -88,7 +62,7 @@
   </div>
 
   <!-- Static sidebar for desktop -->
-  <div class="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-72 lg:flex-col">
+  <div class="hidden lg:fixed lg:inset-y-0 lg:z-40 lg:flex lg:w-72 lg:flex-col">
     <!-- Sidebar component, swap this element with another sidebar if you like -->
     <div class="flex grow flex-col gap-y-5 overflow-y-auto bg-zinc-900 px-6">
       <div class="flex h-16 shrink-0 items-center">
@@ -102,9 +76,9 @@
           <li>
             <ul role="list" class="-mx-2 space-y-1">
               <li>
-                <!-- Current: "bg-zinc-800 text-white", Default: "text-zinc-400 hover:text-white hover:bg-zinc-800" -->
-                <a href="#"
-                  class="bg-zinc-800 text-white group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold">
+                <a href="/dashboard"
+                  :class="window.location.pathname === new URL($el.href).pathname ? 'bg-zinc-800 text-white' : 'text-zinc-400 hover:text-white hover:bg-zinc-800'"
+                  class="group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold">
                   Dashboard
                 </a>
               </li>
@@ -112,33 +86,12 @@
               {% for group in groups %}
               <li>
                 <a href="/groups/{{ group.id }}"
-                  class="text-zinc-400 hover:text-white hover:bg-zinc-800 group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold">
+                  :class="window.location.pathname === new URL($el.href).pathname ? 'bg-zinc-800 text-white' : 'text-zinc-400 hover:text-white hover:bg-zinc-800'"
+                  class="group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold">
                   {{ group.title }}
                 </a>
               </li>
               {% endfor %}
-            </ul>
-          </li>
-          <li>
-            <div class="text-xs font-semibold leading-6 text-zinc-400">Custom Configs</div>
-            <ul role="list" class="-mx-2 mt-2 space-y-1">
-              <li>
-                <!-- Current: "bg-zinc-800 text-white", Default: "text-zinc-400 hover:text-white hover:bg-zinc-800" -->
-                <a href="#"
-                  class="text-zinc-400 hover:text-white hover:bg-zinc-800 group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold">
-                  <span
-                    class="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border border-zinc-700 bg-zinc-800 text-[0.625rem] font-medium text-zinc-400 group-hover:text-white">H</span>
-                  <span class="truncate">Project</span>
-                </a>
-              </li>
-              <li>
-                <a href="#"
-                  class="text-zinc-400 hover:text-white hover:bg-zinc-800 group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold">
-                  <span
-                    class="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border border-zinc-700 bg-zinc-800 text-[0.625rem] font-medium text-zinc-400 group-hover:text-white">T</span>
-                  <span class="truncate">Create</span>
-                </a>
-              </li>
             </ul>
           </li>
           <li class="-mx-6 mt-auto">
