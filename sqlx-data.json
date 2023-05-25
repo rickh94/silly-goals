@@ -100,6 +100,24 @@
     },
     "query": "INSERT INTO goals(title, description, stage, deadline, group_id) \n        VALUES ($1, $2, $3, $4, $5)"
   },
+  "3927b43f209f95d31f2230af112f9e89c8019ca15a16b341753918dc08064064": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int64"
+        }
+      ],
+      "nullable": [
+        false
+      ],
+      "parameters": {
+        "Right": 2
+      }
+    },
+    "query": "SELECT \n        id\n        FROM groups \n        WHERE user_id = $1 AND id = $2;"
+  },
   "44717960af68304e4b99dd1035562afe83e862dcea996832b2afdcca2dfec88e": {
     "describe": {
       "columns": [
@@ -289,6 +307,16 @@
       }
     },
     "query": "SELECT id, userid as \"userid: Uuid\", email, name \n        FROM users \n        WHERE userid = $1;"
+  },
+  "7be40f87d038afb74f4bda91a53e7a4d75ff6ab92ab6b63470be35911e665c88": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Right": 2
+      }
+    },
+    "query": "DELETE FROM groups WHERE user_id = $1 AND id = $2;"
   },
   "7f8ce5dffef8e75c22ee40a40622957387d2a76fa110646f898d4379316e8203": {
     "describe": {
@@ -579,6 +607,16 @@
       }
     },
     "query": "INSERT INTO users(name, email, userid)\n            VALUES ($1, $2, $3);"
+  },
+  "c3e20b8343affa1ef949c3f31821f81e97e41661993b4d1d968c49d4fcc01f0a": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Right": 2
+      }
+    },
+    "query": "DELETE FROM goals WHERE group_id = $1 AND id = $2"
   },
   "c4678e7accd92b485a8c786c95413f7c68f6c2c5d1f4c8236ffeea29452a4710": {
     "describe": {
