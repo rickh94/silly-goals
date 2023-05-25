@@ -13,3 +13,4 @@ Secrets.dev.toml
 
 litestream.yml
 *.db
+static/main.css

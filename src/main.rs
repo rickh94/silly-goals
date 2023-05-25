@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use actix_identity::IdentityMiddleware;
 use actix_session::{storage::RedisSessionStore, SessionMiddleware};
 use actix_web::{
@@ -85,7 +87,6 @@ async fn main() -> Result<(), std::io::Error> {
 
     let hostname = dotenvy::var("HOSTNAME").expect("HOSTNAME must be set");
 
-    // TODO: make this nicer
     let rp_origin = Url::parse(&format!("https://{hostname}")).expect("Invalid URL");
     let builder = WebauthnBuilder::new(&hostname, &rp_origin)
         .expect("Invalid configuration")
@@ -139,7 +140,11 @@ async fn main() -> Result<(), std::io::Error> {
                 redis_store.clone(),
                 secret_key.clone(),
             ))
-            .wrap(IdentityMiddleware::default())
+            .wrap(
+                IdentityMiddleware::builder()
+                    .visit_deadline(Some(Duration::from_secs(3600 * 24)))
+                    .build(),
+            )
             .wrap(Compress::default())
             .wrap(ErrorHandlers::new().handler(StatusCode::UNAUTHORIZED, handle_unauthorized))
             .wrap(Logger::default())
@@ -156,11 +161,13 @@ async fn main() -> Result<(), std::io::Error> {
             .service(auth::post_login)
             .service(auth::finish_login)
             .service(auth::profile)
+            .service(auth::delete_profile)
             .service(auth::logout)
             .service(dashboard::dashboard)
             .service(dashboard::new_group)
             .service(dashboard::post_new_group)
             .service(dashboard::edit_group)
+            .service(dashboard::delete_group)
             .service(dashboard::post_edit_group)
             .service(dashboard::get_group)
             .service(dashboard::new_goal)
@@ -169,6 +176,7 @@ async fn main() -> Result<(), std::io::Error> {
             .service(dashboard::edit_goal)
             .service(dashboard::post_edit_goal)
             .service(dashboard::patch_goal_tone)
+            .service(dashboard::delete_goal)
             .service(webauthn_routes::start_registration)
             .service(webauthn_routes::finish_registration)
             .service(webauthn_routes::start_login)
@@ -179,3 +187,6 @@ async fn main() -> Result<(), std::io::Error> {
     .run()
     .await
 }
+
+// TODO: add htmx for reload-free interactivity
+// TODO: change the outgoing name of the server

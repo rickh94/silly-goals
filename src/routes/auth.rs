@@ -244,11 +244,33 @@ struct LoginStart {
 
 /// Start Login for the user account
 #[get("login")]
-async fn login(session: Session, identity: Option<Identity>) -> Result<HttpResponse> {
-    if identity.is_some() {
+async fn login(
+    session: Session,
+    identity: Option<Identity>,
+    pool: web::Data<SqlitePool>,
+) -> Result<HttpResponse> {
+    let mut conn = pool
+        .get_ref()
+        .acquire()
+        .await
+        .map_err(ErrorInternalServerError)?;
+    if identity.is_some()
+        && queries::check_for_user_from_identity(&mut conn, &identity)
+            .await
+            .is_ok()
+    {
         return Ok(HttpResponse::SeeOther()
             .insert_header(("Location", "/profile"))
             .finish());
+    } else {
+        // In case an old session is hanging around with an invalid logged in user,
+        // we delete the session, then reload to get a new one (could be nicer i guess)
+        if let Some(identity) = identity {
+            identity.logout();
+            return Ok(HttpResponse::SeeOther()
+                .insert_header(("Location", "/login"))
+                .finish());
+        }
     }
     let csrf_token = CsrfToken::get_or_create(&session).map_err(|err| {
         info!("CSRF error: {}", err);
@@ -471,7 +493,7 @@ async fn logout(identity: Identity) -> HttpResponse {
         .finish()
 }
 
-// TODO:  implement profile delete with cascading
+// TODO:  implement profile editing and delete with cascading
 
 #[derive(Template)]
 #[template(path = "profile.html")]
@@ -505,4 +527,28 @@ async fn profile(identity: Identity, pool: web::Data<SqlitePool>) -> actix_web::
         user,
         groups,
     })
+}
+
+/// Delete the user's profile
+#[post("/profile/delete")]
+async fn delete_profile(
+    identity: Identity,
+    pool: web::Data<SqlitePool>,
+) -> actix_web::Result<HttpResponse> {
+    let mut conn = pool
+        .get_ref()
+        .acquire()
+        .await
+        .map_err(ErrorInternalServerError)?;
+
+    let user = queries::get_user_from_identity(&mut conn, &identity).await?;
+
+    sqlx::query!("DELETE FROM users WHERE id = $1", user.id)
+        .execute(&mut conn)
+        .await
+        .map_err(ErrorInternalServerError)?;
+
+    identity.logout();
+
+    Ok(HttpResponse::Ok().finish())
 }

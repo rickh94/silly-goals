@@ -1,0 +1,194 @@
+function prepareDeleteGoal(groupId, goalId) {
+  return async () => {
+    try {
+      const res = await fetch(`/groups/${groupId}/goals/${goalId}`, {
+        method: 'DELETE'
+      });
+
+      if (res.ok) {
+        window.location.replace(`/groups/${groupId}`)
+        Alpine.store('notification').show('Delete Succeeded', 'Deleted your goal', 'success');
+      } else {
+        Alpine.store('notification').show('Delete Failed', 'Could not delete your goal', 'failure');
+      }
+    } catch (err) {
+      console.log(err);
+      Alpine.store('notification').show('Delete Failed', 'Could not delete your goal', 'failure');
+    }
+  }
+
+}
+
+function confirmDeleteGoal(element) {
+  const groupId = element.dataset.groupId;
+  const goalId = element.dataset.goalId;
+  const title = element.dataset.title;
+
+  Alpine.store('confirm').show('Delete Goal',
+  `Are you sure you want to delete ${title}?`,
+    `Delete ${title}`,
+    prepareDeleteGoal(groupId, goalId),
+  );
+}
+
+
+function prepareDeleteGroup(groupId) {
+  return async () => {
+    try {
+      const res = await fetch(`/groups/${groupId}`, {
+        method: 'DELETE'
+      });
+
+      if (res.ok) {
+        window.location.replace('/dashboard')
+        Alpine.store('notification').show(
+          'Group Deleted',
+          'Your group and all its goals have been deleted.',
+          'success'
+        );
+      } else {
+        Alpine.store('notification').show(
+          'Delete Failed',
+          'Your group could not be deleted. Try again later',
+          'failure'
+        );
+      }
+    } catch (err) {
+      console.log(err);
+      Alpine.store('notification').show(
+        'Delete Failed',
+        'Your group could not be deleted. Try again later',
+        'failure'
+      );
+    }
+  }
+}
+
+function confirmDeleteGroup(element) {
+  const groupId = element.dataset.groupId;
+  const title = element.dataset.title;
+
+  Alpine.store('confirm').show(
+    'Delete Group',
+    `Are you sure you want to delete ${title} and all the associated goals?`,
+    `Delete ${title}`,
+    prepareDeleteGroup(groupId),
+  );
+}
+
+
+async function deleteAccount() {
+  try {
+    const res = await fetch('/profile/delete', {
+      method: 'POST',
+    });
+    if (res.ok) {
+      Alpine.store('notification')
+        .show(
+          'Account Deleted', 
+          'Your account has been deleted and your data has been wiped',
+        )
+      window.location.replace('/');
+    } else {
+      Alpine.store('notification')
+        .show('Delete Failed',
+          'Could not delete your account, please try again', 
+          'failure', 
+          false);
+    }
+  } catch (err) {
+    console.log(err);
+    Alpine.store('notification')
+      .show('Delete Failed',
+        'Could not delete your account, please try again', 
+        'failure', 
+        false);
+  }
+}
+
+function confirmDeleteAccount() {
+  Alpine.store('confirm').show('Delete Your Account',
+    'Are you sure you want to delete your account and all you goals and groups?',
+    'Delete My Account',
+    deleteAccount,
+  );
+}
+
+function displayDate(datestring) {
+  return (new Date(datestring)).toDateString();
+}
+
+
+async function updateGoalStage(event, droppedOn) {
+  const moving = document.getElementById(event.dataTransfer.getData('text/plain'));
+  moving.remove();
+  droppedOn.querySelector('.goal-list').prepend(moving);
+  const newStage = droppedOn.dataset.stage;
+  const oldStage = moving.dataset.stage;
+  const goalId = moving.dataset.goalId;
+  const groupId = moving.dataset.groupId;
+
+  try {
+    const res = await fetch(
+      `/groups/${groupId}/goals/${goalId}/stage?stage=${newStage}`,
+      {
+        method: "PATCH",
+      }
+    )
+
+    if (res.ok) {
+      moving.dataset.stage = newStage;
+      Alpine.store('notification').show('Update Successful', 'Goal stage updated');
+    } else {
+      moving.remove();
+      const putBack = document.getElementById(`stage-${oldStage}`);
+      putBack.querySelector('.goal-list').prepend(moving);
+      Alpine.store('notification').show('Update Failed', "Could not update goal", 'failure');
+    }
+
+  } catch (err) {
+    console.log(err);
+    moving.remove();
+    const putBack = document.getElementById(`stage-${oldStage}`);
+    putBack.querySelector('.goal-list').prepend(moving);
+    Alpine.store('notification').show('Update Failed', "Could not update goal", 'failure');
+  }
+}
+
+function startDragging(event, dragging) {
+  event.dataTransfer.effectAllowed = 'move';
+  event.dataTransfer.setData('text/plain', dragging.id);
+}
+
+
+async function startRegistration() {
+  let res = await fetch("/webauthn/register", {
+    method: 'GET',
+  });
+
+  let creationOptions = await res.json();
+  console.log(creationOptions);
+
+  let attResp;
+  try {
+    attResp = await SimpleWebAuthnBrowser.startRegistration(creationOptions.publicKey);
+  } catch (error) {
+    Alpine.store('notification').show('Registration Failed', 'Could not register device', 'failure');
+    console.debug(error);
+    return;
+  }
+
+
+  const verificationResponse = await fetch("/webauthn/register", {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(attResp),
+  });
+
+  if (verificationResponse.ok) {
+    Alpine.store('notification').show('Registration Succeeded', 'You can now log in using just this device!', 'success');
+  }
+}
+

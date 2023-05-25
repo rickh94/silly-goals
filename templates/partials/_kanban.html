@@ -1,10 +1,10 @@
-<script src="/static/drag-goal.js"></script>
-<div class="px-2 grid grid-rows-4 md:grid-rows-1 md:grid-cols-4 gap-1 md:mt-10" id="kanban">
+<div class="px-2 flex flex-col space-y-4 md:space-y-0 md:grid md:grid-cols-4 md:gap-1 w-full" id="kanban">
   {% for stage in group.tone_stages %}
   <div class="overflow-hidden rounded border h-auto {{ loop.index0|stage_color_light }}" data-stage="{{ loop.index0 }}"
     @drop="adding = false; updateGoalStage($event, $el)" x-data="{adding: false}" @dragover.prevent="adding = true"
     @dragleave.prevent="adding = false"
-    :class="adding ? 'shadow-blue-100 shadow-lg border-blue-800' : 'shadow border-zinc-100'" id="stage-{{loop.index0}}">
+    :class="adding ? 'shadow-blue-100 shadow-lg border-blue-800' : 'shadow {{ loop.index0|stage_border_light }}'"
+    id="stage-{{loop.index0}}">
     <div class="px-2 pt-2 pb-4 flex flex-col space-y-2">
       <div class="flex justify-center">
         <h2 class="font-bold text-xl w-auto text-center px-0 py-2 text-zinc-900">

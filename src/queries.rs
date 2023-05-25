@@ -1,5 +1,6 @@
 use actix_identity::Identity;
 use actix_web::error::{ErrorInternalServerError, ErrorUnauthorized};
+use anyhow::anyhow;
 use log::error;
 use sqlx::{pool::PoolConnection, types::Uuid, Sqlite};
 
@@ -44,4 +45,33 @@ pub async fn get_user_by_email(
         error!("Error communicating with database: {}", err);
         ErrorInternalServerError(err)
     })
+}
+
+/// Check whether a user exists. Returns Ok(()) if the use exists, anyhow error
+/// if not
+pub async fn check_for_user_from_identity(
+    conn: &mut PoolConnection<Sqlite>,
+    identity: &Option<Identity>,
+) -> anyhow::Result<()> {
+    if identity.is_none() {
+        return Err(anyhow!("No identity"));
+    }
+    // just checked for none
+    #[allow(clippy::unwrap_used)]
+    let identity = identity.as_ref().unwrap();
+
+    let userid = identity
+        .id()
+        .map_err(|_| anyhow!("Could not get user id"))?;
+    let user_uuid = Uuid::parse_str(&userid).map_err(|_| anyhow!("invalid userid"))?;
+    let id = sqlx::query_scalar!("SELECT id FROM users WHERE userid = $1", user_uuid)
+        .fetch_optional(conn)
+        .await
+        .map_err(|_| anyhow!("Could not get matching user"))?;
+
+    if id.is_some() {
+        Ok(())
+    } else {
+        Err(anyhow!("No matching user"))
+    }
 }

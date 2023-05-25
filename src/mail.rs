@@ -16,11 +16,9 @@ pub fn build_plain_email(
     subject: &str,
     body: &str,
 ) -> actix_web::Result<Message> {
-    // TODO: un-hardcode outgoing email, maybe move to global config at app start, or at least
-    // check that it won't die at app startup
     Message::builder()
         .from(
-            "Test Server <sillygoals@rickhenry.dev>"
+            "Silly Goals <sillygoals@mg.rickhenry.dev>"
                 .parse()
                 .expect("Invalid outgoing email"),
         )

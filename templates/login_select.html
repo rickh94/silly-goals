@@ -1,11 +1,9 @@
 {% extends "external.html" %}
 {% block content %}
-<script src="https://unpkg.com/@simplewebauthn/browser@7.2.0/dist/bundle/index.umd.min.js" integrity="sha384-nuBUUi3/L2b1sFDENFeW+oXMpMr4IieiWgJHipm0600wv8L2QCuRse1Vf/X9kOSQ" crossorigin="anonymous"></script>
-<script src="/static/webauthn-login.js"></script>
 <div class="flex min-h-full flex-col justify-center px-6 py-12 lg:px-8" x-data="{open: false}">
   <div class="sm:mx-auto sm:w-full sm:max-w-sm">
     <div class="flex w-full justify-center">
-      {% include "partials/_logo.html" %}
+      {% include "partials/_logo_large.html" %}
     </div>
     <h2 class="mt-10 text-center text-2xl font-bold leading-9 tracking-tight text-gray-900">Choose a Sign in
       Method</h2>

@@ -1,6 +1,7 @@
 use actix_identity::Identity;
 use actix_session::Session;
 use actix_web::{
+    delete,
     error::{ErrorBadRequest, ErrorInternalServerError, ErrorNotFound},
     get, patch, post, web, HttpResponse,
 };
@@ -38,6 +39,18 @@ mod filters {
             2 => Ok("bg-sky-200"),
             3 => Ok("bg-emerald-200"),
             _ => Ok("bg-gray-200"),
+        }
+    }
+    pub fn stage_border_light<S: PartialEq + std::convert::TryInto<usize> + Clone>(
+        s: &S,
+    ) -> ::askama::Result<&'static str> {
+        let s = (*s).clone();
+        match s.try_into().unwrap_or(5) {
+            0 => Ok("border-rose-200"),
+            1 => Ok("border-amber-200"),
+            2 => Ok("border-sky-200"),
+            3 => Ok("border-emerald-200"),
+            _ => Ok("border-gray-200"),
         }
     }
 
@@ -394,6 +407,36 @@ async fn get_group(
     .map_err(ErrorInternalServerError)?;
 
     Ok(HttpResponse::Ok().body(body))
+}
+
+#[delete("/groups/{id}")]
+async fn delete_group(
+    identity: Identity,
+    path: web::Path<i64>,
+    pool: web::Data<SqlitePool>,
+) -> actix_web::Result<HttpResponse> {
+    let group_id = path.into_inner();
+    let mut conn = pool
+        .get_ref()
+        .acquire()
+        .await
+        .map_err(ErrorInternalServerError)?;
+
+    let user = queries::get_user_from_identity(&mut conn, &identity).await?;
+
+    sqlx::query!(
+        r#"DELETE FROM groups WHERE user_id = $1 AND id = $2;"#,
+        user.id,
+        group_id
+    )
+    .execute(&mut conn)
+    .await
+    .map_err(|err| match err {
+        sqlx::Error::RowNotFound => ErrorNotFound(err),
+        e => ErrorInternalServerError(e),
+    })?;
+
+    Ok(HttpResponse::Ok().finish())
 }
 
 #[derive(Debug, Deserialize)]
@@ -882,3 +925,46 @@ async fn patch_goal_tone(
 
     Ok(HttpResponse::Ok().finish())
 }
+
+#[delete("/groups/{group_id}/goals/{goal_id}")]
+async fn delete_goal(
+    identity: Identity,
+    path: web::Path<(i64, i64)>,
+    pool: web::Data<SqlitePool>,
+) -> actix_web::Result<HttpResponse> {
+    let (group_id, goal_id) = path.into_inner();
+    let mut conn = pool
+        .get_ref()
+        .acquire()
+        .await
+        .map_err(ErrorInternalServerError)?;
+
+    let user = queries::get_user_from_identity(&mut conn, &identity).await?;
+
+    sqlx::query!(
+        r#"SELECT 
+        id
+        FROM groups 
+        WHERE user_id = $1 AND id = $2;"#,
+        user.id,
+        group_id
+    )
+    .fetch_one(&mut conn)
+    .await
+    .map_err(|err| match err {
+        sqlx::Error::RowNotFound => ErrorNotFound(err),
+        e => ErrorInternalServerError(e),
+    })?;
+
+    sqlx::query!(
+        "DELETE FROM goals WHERE group_id = $1 AND id = $2",
+        group_id,
+        goal_id
+    )
+    .execute(&mut conn)
+    .await
+    .map_err(ErrorInternalServerError)?;
+
+    Ok(HttpResponse::Ok().finish())
+}
+// TODO: add delete for goals and groups with cascading

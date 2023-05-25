@@ -9,5 +9,5 @@ CREATE TABLE IF NOT EXISTS webauthn_credentials(
   id TEXT UNIQUE NOT NULL,
   passkey TEXT NOT NULL,
   user_id INTEGER NOT NULL,
-  FOREIGN KEY (user_id) REFERENCES users(id)
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );

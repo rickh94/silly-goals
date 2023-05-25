@@ -8,3 +8,6 @@
 !/sqlx-data.json
 !/build.rs
 !/migrations
+!/static-src
+!/package.json
+!/tailwind.config.js

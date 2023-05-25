@@ -6,7 +6,7 @@ async function startLogin() {
     loginInfo = await SimpleWebAuthnBrowser.startAuthentication(loginOptions.publicKey);
   } catch (error) {
     console.error(error);
-    alert("Something went wrong");
+    Alpine.store('notification')
   }
 
   const verificationResp = await fetch("/webauthn/login", {
@@ -20,7 +20,7 @@ async function startLogin() {
   if (verificationResp.status == 200) {
     window.location.replace("/dashboard");
   } else {
-    alert("Could not authenticate, please try again");
+    Alpine.store('notification').show("Auth Failure","Could not authenticate, please try again", 'failure');
     window.location.replace("/login");
   }
 }

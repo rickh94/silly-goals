@@ -142,6 +142,16 @@
     },
     "query": "SELECT * FROM groups WHERE user_id = $1"
   },
+  "50293c2e54af11d4c2a553e29b671cef087a159c6ee7182d8ca929ecb748f3b7": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Right": 1
+      }
+    },
+    "query": "DELETE FROM users WHERE id = $1"
+  },
   "5833443322816e52318542b1c884d5dcc843952e86a2ca7862186919219b4b75": {
     "describe": {
       "columns": [
@@ -369,6 +379,24 @@
       }
     },
     "query": "SELECT id as \"id: Uuid\", user_id, passkey\n        FROM webauthn_credentials\n        WHERE user_id = $1"
+  },
+  "973426fb8cf0455cb4abba330d9efed0ba750567a5d91c295507fe4ca016c1c7": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int64"
+        }
+      ],
+      "nullable": [
+        false
+      ],
+      "parameters": {
+        "Right": 1
+      }
+    },
+    "query": "SELECT id FROM users WHERE userid = $1"
   },
   "97d713d152586bb541e3c362d8bc92e9efc33174ad054330977cf1bdb47407da": {
     "describe": {
