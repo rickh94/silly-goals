@@ -17,4 +17,3 @@ stop:
 			rm .pids/$f
 		done
 	fi
-	pg_ctl stop &>/dev/null

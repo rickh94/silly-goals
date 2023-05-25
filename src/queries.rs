@@ -1,10 +1,14 @@
 use actix_identity::Identity;
-use actix_web::error::{ErrorInternalServerError, ErrorUnauthorized};
+use actix_web::error::{ErrorInternalServerError, ErrorNotFound, ErrorUnauthorized};
 use anyhow::anyhow;
 use log::error;
-use sqlx::{pool::PoolConnection, types::Uuid, Sqlite};
+use sqlx::{
+    pool::PoolConnection,
+    types::{Json, Uuid},
+    Sqlite,
+};
 
-use crate::User;
+use crate::{DeadlineType, GoalBehavior, GroupWithInfo, User};
 
 pub async fn get_user_from_identity(
     conn: &mut PoolConnection<Sqlite>,
@@ -74,4 +78,35 @@ pub async fn check_for_user_from_identity(
     } else {
         Err(anyhow!("No matching user"))
     }
+}
+
+pub async fn get_group_with_info(
+    conn: &mut PoolConnection<Sqlite>,
+    user_id: i64,
+    group_id: i64,
+) -> actix_web::Result<GroupWithInfo> {
+    sqlx::query_as!(
+        GroupWithInfo,
+        r#"SELECT 
+        g.id,
+        g.title, 
+        g.description, 
+        t.name as tone_name, 
+        t.stages as "tone_stages: Json<Vec<String>>", 
+        t.greeting, 
+        t.unmet_behavior as "unmet_behavior: GoalBehavior", 
+        t.deadline as "deadline: DeadlineType"
+        FROM groups g
+        LEFT JOIN tones t
+        ON g.tone_id = t.id
+        WHERE g.user_id = $1 AND g.id = $2;"#,
+        user_id,
+        group_id
+    )
+    .fetch_one(conn)
+    .await
+    .map_err(|err| match err {
+        sqlx::Error::RowNotFound => ErrorNotFound(err),
+        e => ErrorInternalServerError(e),
+    })
 }

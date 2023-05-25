@@ -12,7 +12,7 @@ use sqlx::{types::Json, SqlitePool};
 
 use crate::{
     csrf_token::CsrfToken, queries, DeadlineType, Goal, GoalBehavior, Group, GroupDisplay,
-    GroupLink, GroupWithInfo, Tone, User,
+    GroupLink, Tone, User,
 };
 
 mod filters {
@@ -347,30 +347,7 @@ async fn get_group(
 
     let user = queries::get_user_from_identity(&mut conn, &identity).await?;
 
-    let group = sqlx::query_as!(
-        GroupWithInfo,
-        r#"SELECT 
-        g.id,
-        g.title, 
-        g.description, 
-        t.name as tone_name, 
-        t.stages as "tone_stages: Json<Vec<String>>", 
-        t.greeting, 
-        t.unmet_behavior as "unmet_behavior: GoalBehavior", 
-        t.deadline as "deadline: DeadlineType"
-        FROM groups g
-        LEFT JOIN tones t
-        ON g.tone_id = t.id
-        WHERE g.user_id = $1 AND g.id = $2;"#,
-        user.id,
-        group_id
-    )
-    .fetch_one(&mut conn)
-    .await
-    .map_err(|err| match err {
-        sqlx::Error::RowNotFound => ErrorNotFound(err),
-        e => ErrorInternalServerError(e),
-    })?;
+    let group = queries::get_group_with_info(&mut conn, user.id, group_id).await?;
 
     let goals = sqlx::query_as!(Goal, "SELECT * FROM goals WHERE group_id = $1;", group_id)
         .fetch_all(&mut conn)
@@ -483,30 +460,7 @@ async fn new_goal(
     .await
     .map_err(ErrorInternalServerError)?;
 
-    let group = sqlx::query_as!(
-        GroupWithInfo,
-        r#"SELECT 
-        g.id,
-        g.title, 
-        g.description, 
-        t.name as tone_name, 
-        t.stages as "tone_stages: Json<Vec<String>>", 
-        t.greeting, 
-        t.unmet_behavior as "unmet_behavior: GoalBehavior", 
-        t.deadline as "deadline: DeadlineType"
-        FROM groups g
-        LEFT JOIN tones t
-        ON g.tone_id = t.id
-        WHERE g.user_id = $1 AND g.id = $2;"#,
-        user.id,
-        group_id
-    )
-    .fetch_one(&mut conn)
-    .await
-    .map_err(|err| match err {
-        sqlx::Error::RowNotFound => ErrorNotFound(err),
-        e => ErrorInternalServerError(e),
-    })?;
+    let group = queries::get_group_with_info(&mut conn, user.id, group_id).await?;
 
     let goals = sqlx::query_as!(Goal, "SELECT * FROM goals WHERE group_id = $1;", group_id)
         .fetch_all(&mut conn)
@@ -626,30 +580,7 @@ async fn get_goal(
 
     let user = queries::get_user_from_identity(&mut conn, &identity).await?;
 
-    let group = sqlx::query_as!(
-        GroupWithInfo,
-        r#"SELECT 
-        g.id,
-        g.title, 
-        g.description, 
-        t.name as tone_name, 
-        t.stages as "tone_stages: Json<Vec<String>>", 
-        t.greeting, 
-        t.unmet_behavior as "unmet_behavior: GoalBehavior", 
-        t.deadline as "deadline: DeadlineType"
-        FROM groups g
-        LEFT JOIN tones t
-        ON g.tone_id = t.id
-        WHERE g.user_id = $1 AND g.id = $2;"#,
-        user.id,
-        group_id
-    )
-    .fetch_one(&mut conn)
-    .await
-    .map_err(|err| match err {
-        sqlx::Error::RowNotFound => ErrorNotFound(err),
-        e => ErrorInternalServerError(e),
-    })?;
+    let group = queries::get_group_with_info(&mut conn, user.id, group_id).await?;
 
     let goals = sqlx::query_as!(Goal, "SELECT * FROM goals WHERE group_id = $1;", group_id)
         .fetch_all(&mut conn)
@@ -727,30 +658,7 @@ async fn edit_goal(
 
     let user = queries::get_user_from_identity(&mut conn, &identity).await?;
 
-    let group = sqlx::query_as!(
-        GroupWithInfo,
-        r#"SELECT 
-        g.id,
-        g.title, 
-        g.description, 
-        t.name as tone_name, 
-        t.stages as "tone_stages: Json<Vec<String>>", 
-        t.greeting, 
-        t.unmet_behavior as "unmet_behavior: GoalBehavior", 
-        t.deadline as "deadline: DeadlineType"
-        FROM groups g
-        LEFT JOIN tones t
-        ON g.tone_id = t.id
-        WHERE g.user_id = $1 AND g.id = $2;"#,
-        user.id,
-        group_id
-    )
-    .fetch_one(&mut conn)
-    .await
-    .map_err(|err| match err {
-        sqlx::Error::RowNotFound => ErrorNotFound(err),
-        e => ErrorInternalServerError(e),
-    })?;
+    let group = queries::get_group_with_info(&mut conn, user.id, group_id).await?;
 
     let goals = sqlx::query_as!(Goal, "SELECT * FROM goals WHERE group_id = $1;", group_id)
         .fetch_all(&mut conn)
@@ -967,4 +875,3 @@ async fn delete_goal(
 
     Ok(HttpResponse::Ok().finish())
 }
-// TODO: add delete for goals and groups with cascading
