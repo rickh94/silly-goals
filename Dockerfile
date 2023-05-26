@@ -1,7 +1,10 @@
 FROM node:latest as builder1
+
+RUN npm install pnpm
 WORKDIR /app
+COPY package.json pnpm-lock.yaml .
+RUN pnpm install
 COPY . .
-RUN npm install
 RUN npm run build:prod
 
 FROM rust:1 as builder2
