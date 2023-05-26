@@ -11,3 +11,4 @@
 !/static-src
 !/package.json
 !/tailwind.config.js
+!/pnpm-lock.yaml
