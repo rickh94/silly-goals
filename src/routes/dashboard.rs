@@ -11,8 +11,10 @@ use serde::Deserialize;
 use sqlx::{types::Json, SqlitePool};
 
 use crate::{
-    csrf_token::CsrfToken, queries, DeadlineType, Goal, GoalBehavior, Group, GroupDisplay,
-    GroupLink, Tone, User,
+    csrf_token::CsrfToken,
+    htmx::{hx_trigger_notification, HxHeaderInfo},
+    htmx::{IsHtmx, NotificationVariant},
+    queries, DeadlineType, Goal, GoalBehavior, Group, GroupDisplay, GroupLink, Tone, User,
 };
 
 mod filters {
@@ -70,11 +72,30 @@ mod filters {
     }
 }
 
+fn group_goals_by_stage(goals: &[Goal]) -> Vec<Vec<Goal>> {
+    let mut goals_in_stages = vec![vec![]; 4];
+
+    for goal in goals.iter() {
+        if goal.stage < 5 {
+            goals_in_stages[goal.stage as usize].push(goal.clone());
+        } else {
+            error!("Goal has invalid stage, skipping: {:#?}", goal)
+        }
+    }
+    goals_in_stages
+}
+
 #[derive(Template)]
-#[template(path = "dashboard.html")]
-struct Dashboard {
+#[template(path = "pages/dashboard.html")]
+struct DashboardPage {
     title: String,
     user: User,
+    groups: Vec<Group>,
+}
+
+#[derive(Template)]
+#[template(path = "partials/dashboard.html")]
+struct DashboardPartial {
     groups: Vec<Group>,
 }
 
@@ -82,7 +103,9 @@ struct Dashboard {
 async fn dashboard(
     identity: Identity,
     pool: web::Data<SqlitePool>,
-) -> actix_web::Result<Dashboard> {
+    is_hx: IsHtmx,
+    hx_headers: HxHeaderInfo,
+) -> actix_web::Result<HttpResponse> {
     let mut conn = pool
         .get_ref()
         .acquire()
@@ -95,20 +118,38 @@ async fn dashboard(
         .await
         .map_err(ErrorInternalServerError)?;
 
-    Ok(Dashboard {
-        title: "Dashboard . Silly Goals".into(),
-        user,
-        groups,
-    })
+    let body = if *is_hx && !hx_headers.boosted {
+        DashboardPartial { groups }
+            .render()
+            .map_err(ErrorInternalServerError)?
+    } else {
+        DashboardPage {
+            title: "Silly Goals".into(),
+            user,
+            groups,
+        }
+        .render()
+        .map_err(ErrorInternalServerError)?
+    };
+    Ok(HttpResponse::Ok()
+        .insert_header(("HX-Trigger-After-Swap", "updateLocation"))
+        .body(body))
 }
 
 #[derive(Template)]
-#[template(path = "new_group.html")]
-struct NewGroup {
+#[template(path = "pages/new_group.html")]
+struct NewGroupPage {
     title: String,
     user: User,
     tones: Vec<Tone>,
     groups: Vec<Group>,
+    csrf_token: CsrfToken,
+}
+
+#[derive(Template)]
+#[template(path = "partials/new_group.html")]
+struct NewGroupPartial {
+    tones: Vec<Tone>,
     csrf_token: CsrfToken,
 }
 
@@ -117,7 +158,8 @@ async fn new_group(
     identity: Identity,
     pool: web::Data<SqlitePool>,
     session: Session,
-) -> actix_web::Result<NewGroup> {
+    is_hx: IsHtmx,
+) -> actix_web::Result<HttpResponse> {
     let mut conn = pool
         .get_ref()
         .acquire()
@@ -139,20 +181,33 @@ async fn new_group(
     .await
     .map_err(ErrorInternalServerError)?;
 
+    let csrf_token = CsrfToken::get_or_create(&session).map_err(ErrorInternalServerError)?;
+
+    if *is_hx {
+        let body = NewGroupPartial { tones, csrf_token }
+            .render()
+            .map_err(ErrorInternalServerError)?;
+        return Ok(HttpResponse::Ok()
+            .insert_header(("HX-Trigger-After-Swap", "updateLocation"))
+            .body(body));
+    }
+
     let groups = sqlx::query_as!(Group, "SELECT * FROM groups WHERE user_id = $1", user.id)
         .fetch_all(&mut conn)
         .await
         .map_err(ErrorInternalServerError)?;
 
-    let csrf_token = CsrfToken::get_or_create(&session).map_err(ErrorInternalServerError)?;
-
-    Ok(NewGroup {
-        title: "New Group . Silly Goals".into(),
+    let body = NewGroupPage {
+        title: "Silly Goals".into(),
         user,
         tones,
         csrf_token,
         groups,
-    })
+    }
+    .render()
+    .map_err(ErrorInternalServerError)?;
+
+    Ok(HttpResponse::Ok().body(body))
 }
 
 #[derive(Deserialize)]
@@ -196,18 +251,34 @@ async fn post_new_group(
         ErrorInternalServerError(err)
     })?;
 
+    let notification = hx_trigger_notification(
+        format!("Created {}", form.title),
+        "New Group Created!".into(),
+        NotificationVariant::Success,
+        true,
+    );
+
     Ok(HttpResponse::SeeOther()
+        .insert_header(notification)
         .insert_header(("Location", format!("/groups/{}", created_group_id)))
         .finish())
 }
 
 #[derive(Template)]
-#[template(path = "edit_group.html")]
-struct EditGroup {
+#[template(path = "pages/edit_group.html")]
+struct EditGroupPage {
     title: String,
     user: User,
     group: Group,
     groups: Vec<Group>,
+    tones: Vec<Tone>,
+    csrf_token: CsrfToken,
+}
+
+#[derive(Template)]
+#[template(path = "partials/edit_group.html")]
+struct EditGroupPartial {
+    group: Group,
     tones: Vec<Tone>,
     csrf_token: CsrfToken,
 }
@@ -218,6 +289,7 @@ async fn edit_group(
     path: web::Path<i64>,
     pool: web::Data<SqlitePool>,
     session: Session,
+    is_hx: IsHtmx,
 ) -> actix_web::Result<HttpResponse> {
     let group_id = path.into_inner();
     let mut conn = pool
@@ -248,11 +320,6 @@ async fn edit_group(
         e => ErrorInternalServerError(e),
     })?;
 
-    let groups = sqlx::query_as!(Group, "SELECT * FROM groups WHERE user_id = $1", user.id)
-        .fetch_all(&mut conn)
-        .await
-        .map_err(ErrorInternalServerError)?;
-
     let csrf_token = CsrfToken::get_or_create(&session)?;
 
     let tones = sqlx::query_as!(
@@ -268,8 +335,26 @@ async fn edit_group(
     .await
     .map_err(ErrorInternalServerError)?;
 
-    let body = EditGroup {
-        title: format!("Group {} . Silly Goals", group.title),
+    if *is_hx {
+        let body = EditGroupPartial {
+            tones: tones.clone(),
+            group: group.clone(),
+            csrf_token: csrf_token.clone(),
+        }
+        .render()
+        .map_err(ErrorInternalServerError)?;
+        return Ok(HttpResponse::Ok()
+            .insert_header(("HX-Trigger-After-Swap", "updateLocation"))
+            .body(body));
+    }
+
+    let groups = sqlx::query_as!(Group, "SELECT * FROM groups WHERE user_id = $1", user.id)
+        .fetch_all(&mut conn)
+        .await
+        .map_err(ErrorInternalServerError)?;
+
+    let body = EditGroupPage {
+        title: "Silly Goals".into(),
         user,
         group,
         groups,
@@ -289,6 +374,7 @@ async fn post_edit_group(
     form: web::Form<GroupForm>,
     session: Session,
     pool: web::Data<SqlitePool>,
+    is_hx: IsHtmx,
 ) -> actix_web::Result<HttpResponse> {
     CsrfToken::verify_from_session(&session, &form.csrftoken)?;
     let group_id = path.into_inner();
@@ -317,14 +403,34 @@ async fn post_edit_group(
     .await
     .map_err(ErrorInternalServerError)?;
 
+    if *is_hx {
+        let groups = sqlx::query_as!(Group, "SELECT * FROM groups WHERE user_id = $1", user.id)
+            .fetch_all(&mut conn)
+            .await
+            .map_err(ErrorInternalServerError)?;
+        let body = DashboardPartial { groups }
+            .render()
+            .map_err(ErrorInternalServerError)?;
+        let notification = hx_trigger_notification(
+            format!("{} Updated", form.title),
+            "Your group has been updated".into(),
+            NotificationVariant::Success,
+            true,
+        );
+        return Ok(HttpResponse::Ok()
+            .insert_header(notification)
+            .append_header(("HX-Trigger-After-Settle", "updateLocation"))
+            .body(body));
+    }
+
     Ok(HttpResponse::SeeOther()
         .insert_header(("Location", "/dashboard"))
         .finish())
 }
 
 #[derive(Template)]
-#[template(path = "group.html")]
-struct ShowGroup {
+#[template(path = "pages/group.html")]
+struct ShowGroupPage {
     title: String,
     user: User,
     group: GroupDisplay,
@@ -332,11 +438,21 @@ struct ShowGroup {
     groups: Vec<GroupLink>,
 }
 
+#[derive(Template)]
+#[template(path = "partials/group.html")]
+struct ShowGroupPartial {
+    group: GroupDisplay,
+    goals_in_stages: Vec<Vec<Goal>>,
+}
+
+/// Get a group and its goals by the group id
 #[get("/groups/{id}")]
 async fn get_group(
     identity: Identity,
     path: web::Path<i64>,
     pool: web::Data<SqlitePool>,
+    is_hx: IsHtmx,
+    hx_header: HxHeaderInfo,
 ) -> actix_web::Result<HttpResponse> {
     let group_id = path.into_inner();
     let mut conn = pool
@@ -349,32 +465,26 @@ async fn get_group(
 
     let group = queries::get_group_with_info(&mut conn, user.id, group_id).await?;
 
-    let goals = sqlx::query_as!(Goal, "SELECT * FROM goals WHERE group_id = $1;", group_id)
-        .fetch_all(&mut conn)
-        .await
-        .map_err(ErrorInternalServerError)?;
+    let goals = queries::get_goals_for_group(&mut conn, group_id).await?;
 
-    let mut goals_in_stages = vec![vec![]; 4];
+    let goals_in_stages = group_goals_by_stage(&goals);
 
-    for goal in goals.iter() {
-        if goal.stage < 5 {
-            goals_in_stages[goal.stage as usize].push(goal.clone());
-        } else {
-            error!("Goal has invalid stage, skipping: {:#?}", goal)
+    if *is_hx && !hx_header.boosted {
+        let body = ShowGroupPartial {
+            group: group.into(),
+            goals_in_stages,
         }
+        .render()
+        .map_err(ErrorInternalServerError)?;
+        return Ok(HttpResponse::Ok()
+            .insert_header(("HX-Trigger-After-Swap", "updateLocation"))
+            .body(body));
     }
 
-    let groups = sqlx::query_as!(
-        GroupLink,
-        "SELECT id, title FROM groups WHERE user_id = $1",
-        user.id
-    )
-    .fetch_all(&mut conn)
-    .await
-    .map_err(ErrorInternalServerError)?;
+    let groups = queries::get_group_links(&mut conn, user.id).await?;
 
-    let body = ShowGroup {
-        title: format!("Group {} . Silly Goals", group.title),
+    let body = ShowGroupPage {
+        title: "Silly Goals".into(),
         user,
         group: group.into(),
         goals_in_stages,
@@ -386,6 +496,7 @@ async fn get_group(
     Ok(HttpResponse::Ok().body(body))
 }
 
+/// Delete a group and all its goals
 #[delete("/groups/{id}")]
 async fn delete_group(
     identity: Identity,
@@ -422,8 +533,8 @@ struct InitialStage {
 }
 
 #[derive(Template)]
-#[template(path = "new_goal.html")]
-struct NewGoal {
+#[template(path = "pages/new_goal.html")]
+struct NewGoalPage {
     title: String,
     user: User,
     group: GroupDisplay,
@@ -433,6 +544,14 @@ struct NewGoal {
     groups: Vec<GroupLink>,
 }
 
+#[derive(Template)]
+#[template(path = "partials/new_goal.html")]
+struct NewGoalPartial {
+    group: GroupDisplay,
+    selected_stage: usize,
+    csrf_token: CsrfToken,
+}
+
 #[get("/groups/{id}/goals/new")]
 async fn new_goal(
     identity: Identity,
@@ -440,6 +559,7 @@ async fn new_goal(
     pool: web::Data<SqlitePool>,
     query: web::Query<InitialStage>,
     session: Session,
+    is_hx: IsHtmx,
 ) -> actix_web::Result<HttpResponse> {
     let selected_stage = query.stage.unwrap_or(0);
     let group_id = path.into_inner();
@@ -451,36 +571,30 @@ async fn new_goal(
 
     let user = queries::get_user_from_identity(&mut conn, &identity).await?;
 
-    let groups = sqlx::query_as!(
-        GroupLink,
-        "SELECT id, title FROM groups WHERE user_id = $1",
-        user.id
-    )
-    .fetch_all(&mut conn)
-    .await
-    .map_err(ErrorInternalServerError)?;
+    let groups = queries::get_group_links(&mut conn, user.id).await?;
 
     let group = queries::get_group_with_info(&mut conn, user.id, group_id).await?;
-
-    let goals = sqlx::query_as!(Goal, "SELECT * FROM goals WHERE group_id = $1;", group_id)
-        .fetch_all(&mut conn)
-        .await
-        .map_err(ErrorInternalServerError)?;
-
-    let mut goals_in_stages = vec![vec![]; 4];
-
-    for goal in goals.iter() {
-        if goal.stage < 5 {
-            goals_in_stages[goal.stage as usize].push(goal.clone());
-        } else {
-            error!("Goal has invalid stage, skipping: {:#?}", goal)
-        }
-    }
-
     let csrf_token = CsrfToken::get_or_create(&session)?;
 
-    let body = NewGoal {
-        title: format!("Group {} . Silly Goals", group.title),
+    if *is_hx {
+        let body = NewGoalPartial {
+            group: group.into(),
+            csrf_token,
+            selected_stage,
+        }
+        .render()
+        .map_err(ErrorInternalServerError)?;
+
+        return Ok(HttpResponse::Ok()
+            .insert_header(("HX-Trigger-After-Swap", "updateLocation"))
+            .body(body));
+    }
+
+    let goals = queries::get_goals_for_group(&mut conn, group_id).await?;
+    let goals_in_stages = group_goals_by_stage(&goals);
+
+    let body = NewGoalPage {
+        title: "Silly Goals".into(),
         user,
         group: group.into(),
         goals_in_stages,
@@ -510,6 +624,7 @@ async fn post_new_goal(
     form: web::Form<NewGoalForm>,
     session: Session,
     pool: web::Data<SqlitePool>,
+    is_hx: IsHtmx,
 ) -> actix_web::Result<HttpResponse> {
     CsrfToken::verify_from_session(&session, &form.csrftoken)?;
     let group_id = path.into_inner();
@@ -549,14 +664,38 @@ async fn post_new_goal(
     .await
     .map_err(ErrorInternalServerError)?;
 
-    Ok(HttpResponse::SeeOther()
-        .insert_header(("Location", format!("/groups/{}", group_id)))
-        .finish())
+    if *is_hx {
+        let group = queries::get_group_with_info(&mut conn, user.id, group.id).await?;
+        let goals = queries::get_goals_for_group(&mut conn, group.id).await?;
+        let goals_in_stages = group_goals_by_stage(&goals);
+
+        let notification = hx_trigger_notification(
+            format!("Created {}", form.title),
+            "Your goal has been created".into(),
+            NotificationVariant::Success,
+            true,
+        );
+
+        let body = ShowGroupPartial {
+            group: group.into(),
+            goals_in_stages,
+        }
+        .render()
+        .map_err(ErrorInternalServerError)?;
+        Ok(HttpResponse::Ok()
+            .append_header(notification)
+            .append_header(("HX-Trigger-After-Settle", "updateLocation"))
+            .body(body))
+    } else {
+        Ok(HttpResponse::SeeOther()
+            .insert_header(("Location", format!("/groups/{}", group_id)))
+            .finish())
+    }
 }
 
 #[derive(Template)]
-#[template(path = "goal.html")]
-struct ShowGoal {
+#[template(path = "pages/goal.html")]
+struct ShowGoalPage {
     title: String,
     user: User,
     goal: Goal,
@@ -565,11 +704,19 @@ struct ShowGoal {
     groups: Vec<GroupLink>,
 }
 
+#[derive(Template)]
+#[template(path = "partials/goal.html")]
+struct ShowGoalPartial {
+    goal: Goal,
+    group: GroupDisplay,
+}
+
 #[get("/groups/{group_id}/goals/{goal_id}")]
 async fn get_goal(
     identity: Identity,
     path: web::Path<(i64, i64)>,
     pool: web::Data<SqlitePool>,
+    is_hx: IsHtmx,
 ) -> actix_web::Result<HttpResponse> {
     let (group_id, goal_id) = path.into_inner();
     let mut conn = pool
@@ -582,20 +729,32 @@ async fn get_goal(
 
     let group = queries::get_group_with_info(&mut conn, user.id, group_id).await?;
 
-    let goals = sqlx::query_as!(Goal, "SELECT * FROM goals WHERE group_id = $1;", group_id)
-        .fetch_all(&mut conn)
+    if *is_hx {
+        let goal = sqlx::query_as!(
+            Goal,
+            "SELECT * FROM goals WHERE id = $1 AND group_id = $2;",
+            goal_id,
+            group_id,
+        )
+        .fetch_one(&mut conn)
         .await
+        .map_err(|err| match err {
+            sqlx::Error::RowNotFound => ErrorNotFound(err),
+            _ => ErrorInternalServerError(err),
+        })?;
+
+        let body = ShowGoalPartial {
+            goal,
+            group: group.into(),
+        }
+        .render()
         .map_err(ErrorInternalServerError)?;
 
-    let mut goals_in_stages = vec![vec![]; 4];
-
-    for goal in goals.iter() {
-        if goal.stage < 5 {
-            goals_in_stages[goal.stage as usize].push(goal.clone());
-        } else {
-            error!("Goal has invalid stage, skipping: {:#?}", goal)
-        }
+        return Ok(HttpResponse::Ok().body(body));
     }
+
+    let goals = queries::get_goals_for_group(&mut conn, group_id).await?;
+    let goals_in_stages = group_goals_by_stage(&goals);
 
     let goal = goals.iter().find(|g| g.id == goal_id);
 
@@ -607,17 +766,10 @@ async fn get_goal(
     #[allow(clippy::unwrap_used)]
     let goal = goal.unwrap().clone();
 
-    let groups = sqlx::query_as!(
-        GroupLink,
-        "SELECT id, title FROM groups WHERE user_id = $1",
-        user.id
-    )
-    .fetch_all(&mut conn)
-    .await
-    .map_err(ErrorInternalServerError)?;
+    let groups = queries::get_group_links(&mut conn, user.id).await?;
 
-    let body = ShowGoal {
-        title: format!("Group {} . Silly Goals", group.title),
+    let body = ShowGoalPage {
+        title: "Silly Goals".into(),
         user,
         goal,
         group: group.into(),
@@ -631,8 +783,8 @@ async fn get_goal(
 }
 
 #[derive(Template)]
-#[template(path = "edit_goal.html")]
-struct EditGoal {
+#[template(path = "pages/edit_goal.html")]
+struct EditGoalPage {
     title: String,
     user: User,
     group: GroupDisplay,
@@ -642,12 +794,21 @@ struct EditGoal {
     groups: Vec<GroupLink>,
 }
 
+#[derive(Template)]
+#[template(path = "partials/edit_goal.html")]
+struct EditGoalPartial {
+    group: GroupDisplay,
+    csrf_token: CsrfToken,
+    goal: Goal,
+}
+
 #[get("/groups/{group_id}/goals/{goal_id}/edit")]
 async fn edit_goal(
     identity: Identity,
     path: web::Path<(i64, i64)>,
     pool: web::Data<SqlitePool>,
     session: Session,
+    is_hx: IsHtmx,
 ) -> actix_web::Result<HttpResponse> {
     let (group_id, goal_id) = path.into_inner();
     let mut conn = pool
@@ -659,21 +820,32 @@ async fn edit_goal(
     let user = queries::get_user_from_identity(&mut conn, &identity).await?;
 
     let group = queries::get_group_with_info(&mut conn, user.id, group_id).await?;
+    let csrf_token = CsrfToken::get_or_create(&session)?;
 
-    let goals = sqlx::query_as!(Goal, "SELECT * FROM goals WHERE group_id = $1;", group_id)
-        .fetch_all(&mut conn)
+    if *is_hx {
+        let goal = sqlx::query_as!(
+            Goal,
+            "SELECT * FROM goals WHERE id = $1 AND group_id = $2",
+            goal_id,
+            group_id,
+        )
+        .fetch_one(&mut conn)
         .await
         .map_err(ErrorInternalServerError)?;
 
-    let mut goals_in_stages = vec![vec![]; 4];
-
-    for goal in goals.iter() {
-        if goal.stage < 5 {
-            goals_in_stages[goal.stage as usize].push(goal.clone());
-        } else {
-            error!("Goal has invalid stage, skipping: {:#?}", goal)
+        let body = EditGoalPartial {
+            goal,
+            group: group.into(),
+            csrf_token,
         }
+        .render()
+        .map_err(ErrorInternalServerError)?;
+
+        return Ok(HttpResponse::Ok().body(body));
     }
+
+    let goals = queries::get_goals_for_group(&mut conn, group_id).await?;
+    let goals_in_stages = group_goals_by_stage(&goals);
 
     let goal = goals.iter().find(|g| g.id == goal_id);
 
@@ -685,19 +857,10 @@ async fn edit_goal(
     #[allow(clippy::unwrap_used)]
     let goal = goal.unwrap().clone();
 
-    let csrf_token = CsrfToken::get_or_create(&session)?;
+    let groups = queries::get_group_links(&mut conn, user.id).await?;
 
-    let groups = sqlx::query_as!(
-        GroupLink,
-        "SELECT id, title FROM groups WHERE user_id = $1",
-        user.id
-    )
-    .fetch_all(&mut conn)
-    .await
-    .map_err(ErrorInternalServerError)?;
-
-    let body = EditGoal {
-        title: format!("Group {} . Silly Goals", group.title),
+    let body = EditGoalPage {
+        title: "Silly Goals".into(),
         user,
         group: group.into(),
         goals_in_stages,
@@ -727,6 +890,7 @@ async fn post_edit_goal(
     form: web::Form<EditGoalForm>,
     session: Session,
     pool: web::Data<SqlitePool>,
+    is_hx: IsHtmx,
 ) -> actix_web::Result<HttpResponse> {
     CsrfToken::verify_from_session(&session, &form.csrftoken)?;
     let (group_id, goal_id) = path.into_inner();
@@ -769,6 +933,30 @@ async fn post_edit_goal(
     .execute(&mut conn)
     .await
     .map_err(ErrorInternalServerError)?;
+
+    if *is_hx {
+        let group = queries::get_group_with_info(&mut conn, user.id, group.id).await?;
+        let goals = queries::get_goals_for_group(&mut conn, group.id).await?;
+        let goals_in_stages = group_goals_by_stage(&goals);
+        let notification = hx_trigger_notification(
+            format!("{} updated", form.title),
+            "Your goal was updated".into(),
+            NotificationVariant::Success,
+            true,
+        );
+
+        let body = ShowGroupPartial {
+            group: group.into(),
+            goals_in_stages,
+        }
+        .render()
+        .map_err(ErrorInternalServerError)?;
+
+        return Ok(HttpResponse::Ok()
+            .append_header(notification)
+            .append_header(("HX-Trigger", "updateLocation"))
+            .body(body));
+    }
 
     Ok(HttpResponse::SeeOther()
         .insert_header(("Location", format!("/groups/{}", group_id)))

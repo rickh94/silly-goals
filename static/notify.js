@@ -3,6 +3,22 @@ function dummyConfirm() {
 }
 
 document.addEventListener('alpine:init', () => {
+  Alpine.store('location', {
+    path: '',
+
+    update() {
+      setTimeout(() => {
+
+        this.path = window.location.pathname;
+      }, 50);
+    }
+  });
+  Alpine.store('location').update();
+
+  document.addEventListener('updateLocation', () => {
+    Alpine.store('location').update();
+  });
+
   Alpine.store('notification', {
     open: false,
     title: '',
@@ -24,8 +40,10 @@ document.addEventListener('alpine:init', () => {
 
     close() {
       this.open = false;
-      this.title = '';
-      this.message = '';
+      setTimeout(() => {
+        this.title = '';
+        this.message = '';
+      }, 300);
     }
   });
 
@@ -46,10 +64,16 @@ document.addEventListener('alpine:init', () => {
 
     close() {
       this.open = false;
-      this.title = '';
-      this.message = '';
-      this.confirmText = '';
-      this.onConfirm = dummyConfirm;
+      setTimeout(() => {
+        this.title = '';
+        this.message = '';
+        this.confirmText = '';
+        this.onConfirm = dummyConfirm;
+      }, 300);
     },
+  })
+
+  document.addEventListener('notify', event => {
+    Alpine.store('notification').show(event.detail.title, event.detail.message, event.detail.variant, event.detail.autoHide);
   })
 })

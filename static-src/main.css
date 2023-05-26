@@ -75,3 +75,33 @@
 body {
 	font-family: Rubik, sans-serif;
 }
+
+
+.htmx-added .hx-fade-in {
+  opacity: 0;
+}
+
+.htmx-added .hx-scale-in {
+  transform: translateY(1rem);
+}
+
+.hx-fade-in {
+  opacity: 1;
+  transition: opacity 200ms ease-out;
+}
+
+.hx-scale-in {
+  transform: translateY(0);
+  transition: all 200ms ease-out;
+}
+
+@media (min-width: 640px) {
+  .htmx-added .hx-scale-in {
+    transform: translateY(0) scale(0.95);
+  }
+
+  .hx-scale-in {
+    transform: scale(1);
+    transition: all 200ms ease-out;
+  }
+}

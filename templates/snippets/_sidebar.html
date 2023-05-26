@@ -8,10 +8,6 @@
     x-transition:enter-start="-translate-x-full" x-transition:enter-end="translate-x-0"
     x-transition:leave="transition ease-in-out duration-200 transform" x-transition:leave-start="translate-x-0"
     x-transition:leave-end="-translate-x-full">
-    <!--
-        Off-canvas menu, show/hide based on off-canvas menu state.
-
-      -->
     <div class="relative mr-16 flex w-full max-w-xs flex-1" x-transition:enter="ease-in-out duration-300"
       x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
       x-transition:leave="ease-in-out duration-300" x-transition:leave-start="opacity-100"
@@ -29,29 +25,11 @@
       <!-- Sidebar component, swap this element with another sidebar if you like -->
       <div class="flex grow flex-col gap-y-5 overflow-y-auto bg-zinc-900 px-6 pb-2 ring-1 ring-white/10">
         <div class="flex h-16 shrink-0 items-center">
-          {% include "partials/_logo.html" %}
+          {% include "snippets/_logo.html" %}
         </div>
         <nav class="flex flex-1 flex-col">
           <ul role="list" class="flex flex-1 flex-col gap-y-7">
-            <li>
-              <ul role="list" class="-mx-2 space-y-1">
-                <li>
-                  <!-- Current: "bg-zinc-800 text-white", Default: "text-zinc-400 hover:text-white hover:bg-zinc-800" -->
-                  <a href="/dashboard"
-                    :class="window.location.pathname === new URL($el.href).pathname ? 'bg-zinc-800 text-white' : 'text-zinc-400 hover:text-white hover:bg-zinc-800'"
-                    class="group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold">Dashboard
-                  </a>
-                </li>
-                {% for group in groups %}
-                <li>
-                  <a href="/groups/{{ group.id }}"
-                    :class="window.location.pathname === new URL($el.href).pathname ? 'bg-zinc-800 text-white' : 'text-zinc-400 hover:text-white hover:bg-zinc-800'"
-                    class="group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold">{{
-                    group.title }}</a>
-                </li>
-                {% endfor %}
-              </ul>
-            </li>
+            {% include "snippets/_nav_links.html" %}
           </ul>
         </nav>
       </div>
@@ -65,35 +43,15 @@
   <div class="flex grow flex-col gap-y-5 overflow-y-auto bg-zinc-900 px-6">
     <div class="flex h-16 shrink-0 items-center">
       <!-- Change logo -->
-      {% include "partials/_logo.html" %}
+      {% include "snippets/_logo.html" %}
     </div>
     <!-- Templated from same as above -->
     <nav class="flex flex-1 flex-col">
       <ul role="list" class="flex flex-1 flex-col gap-y-7">
-        <li>
-          <ul role="list" class="-mx-2 space-y-1">
-            <li>
-              <a href="/dashboard"
-                :class="window.location.pathname === new URL($el.href).pathname ? 'bg-zinc-800 text-white' : 'text-zinc-400 hover:text-white hover:bg-zinc-800'"
-                class="group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold">
-                Dashboard
-              </a>
-            </li>
-
-            {% for group in groups %}
-            <li>
-              <a href="/groups/{{ group.id }}"
-                :class="window.location.pathname === new URL($el.href).pathname ? 'bg-zinc-800 text-white' : 'text-zinc-400 hover:text-white hover:bg-zinc-800'"
-                class="group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold">
-                {{ group.title }}
-              </a>
-            </li>
-            {% endfor %}
-          </ul>
-        </li>
+        {% include "snippets/_nav_links.html" %}
         <li class="-mx-6 mt-auto">
           <div class="p-4">
-            {% include "partials/_profile.html" %}
+            {% include "snippets/_profile.html" %}
           </div>
         </li>
       </ul>
@@ -109,5 +67,5 @@
     </svg>
   </button>
   <div class="flex-1 text-sm font-semibold leading-6 text-white">Dashboard</div>
-  {% include "partials/_profile.html" %}
+  {% include "snippets/_profile.html" %}
 </div>

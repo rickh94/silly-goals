@@ -187,6 +187,3 @@ async fn main() -> Result<(), std::io::Error> {
     .run()
     .await
 }
-
-// TODO: add htmx for reload-free interactivity
-// TODO: change the outgoing name of the server

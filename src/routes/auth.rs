@@ -1,5 +1,6 @@
 use crate::{
-    csrf_token::CsrfToken, mail::*, queries, session_values::*, GroupLink, SessionValue, User,
+    csrf_token::CsrfToken, htmx::IsHtmx, mail::*, queries, session_values::*, GroupLink,
+    SessionValue, User,
 };
 use actix_identity::Identity;
 use actix_session::Session;
@@ -493,19 +494,29 @@ async fn logout(identity: Identity) -> HttpResponse {
         .finish()
 }
 
-// TODO:  implement profile editing and delete with cascading
+// TODO:  implement profile editing
 
 #[derive(Template)]
-#[template(path = "profile.html")]
-struct Profile {
+#[template(path = "pages/profile.html")]
+struct ProfilePage {
     title: String,
     user: User,
     groups: Vec<GroupLink>,
 }
 
+#[derive(Template)]
+#[template(path = "partials/profile.html")]
+struct ProfilePartial {
+    user: User,
+}
+
 /// Display user profie information
 #[get("/profile")]
-async fn profile(identity: Identity, pool: web::Data<SqlitePool>) -> actix_web::Result<Profile> {
+async fn profile(
+    identity: Identity,
+    pool: web::Data<SqlitePool>,
+    is_hx: IsHtmx,
+) -> actix_web::Result<HttpResponse> {
     let mut conn = pool
         .get_ref()
         .acquire()
@@ -522,11 +533,24 @@ async fn profile(identity: Identity, pool: web::Data<SqlitePool>) -> actix_web::
     .await
     .map_err(ErrorInternalServerError)?;
 
-    Ok(Profile {
-        title: "Profile . Silly Goals".into(),
+    if *is_hx {
+        let body = ProfilePartial { user }
+            .render()
+            .map_err(ErrorInternalServerError)?;
+        return Ok(HttpResponse::Ok()
+            .insert_header(("HX-Trigger-After-Swap", "updateLocation"))
+            .body(body));
+    }
+
+    let body = ProfilePage {
+        title: "Silly Goals".into(),
         user,
         groups,
-    })
+    }
+    .render()
+    .map_err(ErrorInternalServerError)?;
+
+    Ok(HttpResponse::Ok().body(body))
 }
 
 /// Delete the user's profile

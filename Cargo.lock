@@ -2180,6 +2180,7 @@ dependencies = [
  "chrono",
  "dotenvy",
  "env_logger",
+ "futures",
  "lettre",
  "log",
  "rand",

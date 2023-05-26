@@ -1,4 +1,4 @@
-<a href="/profile"
+<a href="/profile" hx-get="/profile" hx-target="#main-content" hx-swap="innerHTML" hx-push-url="/profile"
   class="flex items-center gap-x-4 px-2 text-sm font-semibold leading-6 text-zinc-100 hover:bg-zinc-800">
   <span aria-hidden="true" class="text-sm">{% if let Some(name) = user.name -%}
     {{name}}

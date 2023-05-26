@@ -1,27 +1,27 @@
 {% extends "base.html" %}
 {% block layout %}
 
-{% include "partials/_sidebar.html" %}
+{% include "snippets/_sidebar.html" %}
 <script src="/static/internal.js" defer></script>
-<main class="py-10 lg:pl-[18.5rem] px-4 min-h-full">
-    <div class="absolute inset-x-0 -top-40 -z-10 transform-gpu overflow-hidden blur-3xl sm:-top-80" aria-hidden="true">
-      <div
-        class="relative left-[calc(50%-12rem)] aspect-[1155/678] w-[36.125rem] -translate-x-1/2 rotate-[30deg] bg-gradient-to-tr from-red-100 to-rose-300 opacity-40 sm:left-[calc(50%-35rem)] sm:w-[72.1875rem]"
-        style="clip-path: polygon(18% 1%, 83% 12%, 100% 43%, 79% 53%, 86% 89%, 56% 64%, 6% 78%, 0 61%, 30% 28%)">
-      </div>
-    </div>
-    <div class="absolute inset-x-0 -top-40 -z-10 transform-gpu overflow-hidden blur-3xl sm:-top-80" aria-hidden="true">
-      <div
-        class="relative left-[calc(50%+14rem)] aspect-[1155/678] w-[36.125rem] -translate-x-1/2 rotate-[30deg] bg-gradient-to-tr from-green-100 to-emerald-300 opacity-40 sm:left-[calc(50%+28rem)] sm:w-[72.1875rem]"
-        style="clip-path: polygon(18% 1%, 83% 12%, 100% 43%, 79% 53%, 86% 89%, 56% 64%, 6% 78%, 0 61%, 30% 28%)">
-      </div>
-    </div>
-    <div class="absolute inset-x-0 -bottom-20 -z-10 transform-gpu overflow-hidden blur-3xl sm:-bottom-20" aria-hidden="true">
-      <div
-        class="relative left-[calc(50%+1rem)] aspect-[1155/678] w-[36.125rem] -translate-x-1/2 rotate-[30deg] bg-gradient-to-tr from-indigo-100 to-violet-300 opacity-40 sm:left-[calc(50%+4rem)] sm:w-[72.1875rem]"
-        style="clip-path: polygon(18% 1%, 83% 12%, 100% 43%, 79% 53%, 86% 89%, 56% 64%, 6% 78%, 0 61%, 30% 28%)">
-      </div>
-    </div>
+<div class="absolute inset-x-0 -top-40 -z-10 transform-gpu overflow-hidden blur-3xl sm:-top-80" aria-hidden="true">
+  <div
+    class="relative left-[calc(50%-12rem)] aspect-[1155/678] w-[36.125rem] -translate-x-1/2 rotate-[30deg] bg-gradient-to-tr from-red-100 to-rose-300 opacity-40 sm:left-[calc(50%-35rem)] sm:w-[72.1875rem]"
+    style="clip-path: polygon(18% 1%, 83% 12%, 100% 43%, 79% 53%, 86% 89%, 56% 64%, 6% 78%, 0 61%, 30% 28%)">
+  </div>
+</div>
+<div class="absolute inset-x-0 -top-40 -z-10 transform-gpu overflow-hidden blur-3xl sm:-top-80" aria-hidden="true">
+  <div
+    class="relative left-[calc(50%+14rem)] aspect-[1155/678] w-[36.125rem] -translate-x-1/2 rotate-[30deg] bg-gradient-to-tr from-green-100 to-emerald-300 opacity-40 sm:left-[calc(50%+28rem)] sm:w-[72.1875rem]"
+    style="clip-path: polygon(18% 1%, 83% 12%, 100% 43%, 79% 53%, 86% 89%, 56% 64%, 6% 78%, 0 61%, 30% 28%)">
+  </div>
+</div>
+<div class="absolute inset-x-0 -bottom-20 -z-10 transform-gpu overflow-hidden blur-3xl sm:-bottom-20" aria-hidden="true">
+  <div
+    class="relative left-[calc(50%+1rem)] aspect-[1155/678] w-[36.125rem] -translate-x-1/2 rotate-[30deg] bg-gradient-to-tr from-indigo-100 to-violet-300 opacity-40 sm:left-[calc(50%+4rem)] sm:w-[72.1875rem]"
+    style="clip-path: polygon(18% 1%, 83% 12%, 100% 43%, 79% 53%, 86% 89%, 56% 64%, 6% 78%, 0 61%, 30% 28%)">
+  </div>
+</div>
+<main class="py-10 lg:pl-[18.5rem] px-4 min-h-full" id="main-content">
   {% block content %}
   {% endblock content %}
 </main>

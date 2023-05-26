@@ -8,7 +8,7 @@ use sqlx::{
     Sqlite,
 };
 
-use crate::{DeadlineType, GoalBehavior, GroupWithInfo, User};
+use crate::{DeadlineType, Goal, GoalBehavior, GroupLink, GroupWithInfo, User};
 
 pub async fn get_user_from_identity(
     conn: &mut PoolConnection<Sqlite>,
@@ -109,4 +109,28 @@ pub async fn get_group_with_info(
         sqlx::Error::RowNotFound => ErrorNotFound(err),
         e => ErrorInternalServerError(e),
     })
+}
+
+pub async fn get_group_links(
+    conn: &mut PoolConnection<Sqlite>,
+    user_id: i64,
+) -> actix_web::Result<Vec<GroupLink>> {
+    sqlx::query_as!(
+        GroupLink,
+        "SELECT id, title FROM groups WHERE user_id = $1",
+        user_id
+    )
+    .fetch_all(conn)
+    .await
+    .map_err(ErrorInternalServerError)
+}
+
+pub async fn get_goals_for_group(
+    conn: &mut PoolConnection<Sqlite>,
+    group_id: i64,
+) -> actix_web::Result<Vec<Goal>> {
+    sqlx::query_as!(Goal, "SELECT * FROM goals WHERE group_id = $1;", group_id)
+        .fetch_all(conn)
+        .await
+        .map_err(ErrorInternalServerError)
 }

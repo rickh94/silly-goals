@@ -1,4 +1,5 @@
 pub mod csrf_token;
+pub mod htmx;
 pub mod mail;
 pub mod queries;
 pub mod routes;

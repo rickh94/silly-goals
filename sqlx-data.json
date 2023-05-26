@@ -10,6 +10,54 @@
     },
     "query": "INSERT INTO webauthn_credentials(id, user_id, passkey)\n        VALUES ($1, $2, $3);"
   },
+  "228bb010a36f98da47232ad9a47825b76076e699552e9ff1409b6c45f59da3d6": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int64"
+        },
+        {
+          "name": "title",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "description",
+          "ordinal": 2,
+          "type_info": "Text"
+        },
+        {
+          "name": "stage",
+          "ordinal": 3,
+          "type_info": "Int64"
+        },
+        {
+          "name": "group_id",
+          "ordinal": 4,
+          "type_info": "Int64"
+        },
+        {
+          "name": "deadline",
+          "ordinal": 5,
+          "type_info": "Text"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        true,
+        false,
+        false,
+        true
+      ],
+      "parameters": {
+        "Right": 2
+      }
+    },
+    "query": "SELECT * FROM goals WHERE id = $1 AND group_id = $2;"
+  },
   "25ddf8a166659ad6863dc0115c97182b7900d7b8c96781b59386cde6b0f3e2e3": {
     "describe": {
       "columns": [
@@ -253,6 +301,54 @@
       }
     },
     "query": "SELECT \n        g.id,\n        g.title, \n        g.description, \n        t.name as tone_name, \n        t.stages as \"tone_stages: Json<Vec<String>>\", \n        t.greeting, \n        t.unmet_behavior as \"unmet_behavior: GoalBehavior\", \n        t.deadline as \"deadline: DeadlineType\"\n        FROM groups g\n        LEFT JOIN tones t\n        ON g.tone_id = t.id\n        WHERE g.user_id = $1 AND g.id = $2;"
+  },
+  "663db41f008547051d433e42101f4b6024e11f7de3cb046ae75448dd1634ae09": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int64"
+        },
+        {
+          "name": "title",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "description",
+          "ordinal": 2,
+          "type_info": "Text"
+        },
+        {
+          "name": "stage",
+          "ordinal": 3,
+          "type_info": "Int64"
+        },
+        {
+          "name": "group_id",
+          "ordinal": 4,
+          "type_info": "Int64"
+        },
+        {
+          "name": "deadline",
+          "ordinal": 5,
+          "type_info": "Text"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        true,
+        false,
+        false,
+        true
+      ],
+      "parameters": {
+        "Right": 2
+      }
+    },
+    "query": "SELECT * FROM goals WHERE id = $1 AND group_id = $2"
   },
   "739aa80324806562b53118e012c677b9cb1bb331101371bd18f1f9d9062b001b": {
     "describe": {

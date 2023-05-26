@@ -6,7 +6,7 @@ function prepareDeleteGoal(groupId, goalId) {
       });
 
       if (res.ok) {
-        window.location.replace(`/groups/${groupId}`)
+        htmx.ajax('GET', `/groups/${groupId}`, "#main-content")
         Alpine.store('notification').show('Delete Succeeded', 'Deleted your goal', 'success');
       } else {
         Alpine.store('notification').show('Delete Failed', 'Could not delete your goal', 'failure');
@@ -25,7 +25,7 @@ function confirmDeleteGoal(element) {
   const title = element.dataset.title;
 
   Alpine.store('confirm').show('Delete Goal',
-  `Are you sure you want to delete ${title}?`,
+    `Are you sure you want to delete ${title}?`,
     `Delete ${title}`,
     prepareDeleteGoal(groupId, goalId),
   );
@@ -40,7 +40,8 @@ function prepareDeleteGroup(groupId) {
       });
 
       if (res.ok) {
-        window.location.replace('/dashboard')
+        htmx.ajax('GET', '/dashboard', "#main-content");
+        document.getElementById(`group-nav-link-${groupId}`).remove()
         Alpine.store('notification').show(
           'Group Deleted',
           'Your group and all its goals have been deleted.',
@@ -85,23 +86,23 @@ async function deleteAccount() {
     if (res.ok) {
       Alpine.store('notification')
         .show(
-          'Account Deleted', 
+          'Account Deleted',
           'Your account has been deleted and your data has been wiped',
         )
       window.location.replace('/');
     } else {
       Alpine.store('notification')
         .show('Delete Failed',
-          'Could not delete your account, please try again', 
-          'failure', 
+          'Could not delete your account, please try again',
+          'failure',
           false);
     }
   } catch (err) {
     console.log(err);
     Alpine.store('notification')
       .show('Delete Failed',
-        'Could not delete your account, please try again', 
-        'failure', 
+        'Could not delete your account, please try again',
+        'failure',
         false);
   }
 }

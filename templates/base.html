@@ -13,7 +13,7 @@
   <script src="/static/alpine.min.js" defer></script>
   <script src="/static/htmx.min.js" defer></script>
   <script src="/static/webauthn-browser.js" defer></script>
-  <script src="/static/notify.js" defer></script>
+  <script src="/static/notify.js"></script>
 </head>
 
 <body class="h-full" x-data="{ navOpen: false }">
@@ -62,7 +62,7 @@
     </div>
   </div>
 
-  <div class="relative z-20" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+  <div class="relative z-40" aria-labelledby="modal-title" role="dialog" aria-modal="true">
     <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" x-data x-show="$store.confirm.open"
       x-transition:enter="transform ease-out duration-200 transition"
       x-transition:enter-start="translate-y-2 opacity-0 sm:translate-y-0 sm:translate-x-2"
@@ -70,7 +70,7 @@
       x-transition:leave="transition ease-in duration-100" x-transition:leave-start="opacity-100"
       x-transition:leave-end="opacity-0"></div>
 
-    <div class="fixed inset-0 z-20 overflow-y-auto" x-cloak x-show="$store.confirm.open">
+    <div class="fixed inset-0 z-40 overflow-y-auto" x-cloak x-show="$store.confirm.open">
       <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
         <div
           class="relative transform overflow-hidden rounded-lg bg-white px-4 pb-4 pt-5 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:p-6 sm:scale-100"
