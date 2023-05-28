@@ -91,6 +91,8 @@ pub async fn get_group_with_info(
         g.id,
         g.title, 
         g.description, 
+        g.tone_id,
+        g.user_id,
         t.name as tone_name, 
         t.stages as "tone_stages: Json<Vec<String>>", 
         t.greeting, 

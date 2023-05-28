@@ -113,6 +113,8 @@ pub struct GroupWithInfo {
     pub greeting: String,
     pub unmet_behavior: GoalBehavior,
     pub deadline: DeadlineType,
+    pub tone_id: i64,
+    pub user_id: i64,
 }
 
 #[derive(Clone, Debug)]
@@ -125,6 +127,8 @@ pub struct GroupDisplay {
     pub greeting: String,
     pub unmet_behavior: GoalBehavior,
     pub deadline: DeadlineType,
+    pub tone_id: i64,
+    pub user_id: i64,
 }
 
 impl From<GroupWithInfo> for GroupDisplay {
@@ -142,6 +146,20 @@ impl From<GroupWithInfo> for GroupDisplay {
             greeting: value.greeting,
             unmet_behavior: value.unmet_behavior,
             deadline: value.deadline,
+            tone_id: value.tone_id,
+            user_id: value.user_id,
+        }
+    }
+}
+
+impl From<GroupWithInfo> for Group {
+    fn from(value: GroupWithInfo) -> Self {
+        Self {
+            id: value.id,
+            title: value.title,
+            description: value.description,
+            tone_id: value.tone_id,
+            user_id: value.user_id,
         }
     }
 }

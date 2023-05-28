@@ -121,6 +121,7 @@ body {
   transition: opacity 100ms ease-in;
 }
 
+
 @media (min-width: 640px) {
   .htmx-added .hx-scale-in {
     transform: translateY(0) scale(0.95);

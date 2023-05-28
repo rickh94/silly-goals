@@ -24,15 +24,26 @@ document.addEventListener('alpine:init', () => {
     title: '',
     message: '',
     variant: 'success',
+    closeTimeout: null,
+    resetTimeout: null,
+
 
     show(title, message, variant = 'success', autoHide = true) {
+      if (this.closeTimeout) {
+        clearTimeout(this.closeTimeout);
+        this.closeTimeout = null;
+      }
+      if (this.closeTimeout) {
+        clearTimeout(this.closeTimeout);
+        this.closeTimeout = null;
+      }
       this.title = title;
       this.message = message;
       this.open = true;
       this.variant = variant;
 
       if (autoHide) {
-        setTimeout(() => {
+        this.clearTimeout = setTimeout(() => {
           this.close();
         }, 4000);
       }
@@ -40,7 +51,7 @@ document.addEventListener('alpine:init', () => {
 
     close() {
       this.open = false;
-      setTimeout(() => {
+      this.resetTimeout = setTimeout(() => {
         this.title = '';
         this.message = '';
       }, 300);

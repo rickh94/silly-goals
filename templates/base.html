@@ -17,6 +17,10 @@
 </head>
 
 <body class="h-full" x-data="{ navOpen: false }">
+  <a tabindex="0" href="#main-content" role="button"
+    class="z-20 absolute opacity-100 top-0 left-0 ml-2 mt-2 -translate-y-14 transition duration-200 ease-out focus:translate-y-0 inline-flex items-center px-4 py-2 border border-transparent text-base font-medium rounded-md text-white bg-slate-800 focus:outline-none focus:ring-2 focus:ring-offset-2 ring-offset-violet-900 focus:ring-white z-200">
+    Skip to Content
+  </a>
   {# Global notification element #}
   <div aria-live="assertive" x-data x-show="$store.notification.open"
     class="pointer-events-none fixed inset-0 flex items-end px-4 py-6 sm:items-start sm:p-6 z-50" x-cloak>

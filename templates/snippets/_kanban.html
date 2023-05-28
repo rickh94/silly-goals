@@ -5,39 +5,25 @@
     @dragleave.prevent="adding = false"
     :class="adding ? 'shadow-blue-100 shadow-lg border-blue-800' : 'shadow {{ loop.index0|stage_border_light }}'"
     id="stage-{{loop.index0}}">
-    <div class="px-2 pt-2 pb-4 flex flex-col space-y-2">
+    <div class="px-2 pt-2 flex flex-col pb-2 h-full">
       <div class="flex justify-center">
         <h2 class="font-bold text-xl w-auto text-center px-0 py-2 text-zinc-900">
           {{stage}}</h2>
       </div>
-      <div class="flex flex-col space-y-2 goal-list">
+      <div class="flex flex-col goal-list space-y-2" id="list-stage-{{loop.index0}}">
+        {% let stage_number = loop.index0 %}
         {% for goal in goals_in_stages[loop.index0] %}
-        <!-- Goal Card -->
-        <a draggable="true" x-data="{ dragging: false }" @dragstart="dragging = true; startDragging($event, $el)"
-          @dragend="dragging = false" data-goal-id="{{goal.id}}" data-stage="{{loop.index0}}"
-          data-group-id="{{group.id}}" :class="dragging ? 'cursor-grabbing' : 'cursor-grab'" x-show="!dragging"
-          href="/groups/{{group.id}}/goals/{{goal.id}}" hx-get="/groups/{{ group.id }}/goals/{{goal.id}}"
-          hx-push-url="/groups/{{group.id}}/goals/{{goal.id}}" hx-target="#main-content" hx-swap="afterbegin"
-          class="relative flex items-center space-x-3 rounded border border-gray-300 bg-white px-3 py-2 shadow-sm focus-within:ring-2 focus-within:ring-violet-500 focus-within:ring-offset-2 hover:border-gray-400"
-          id="goal-{{goal.id}}">
-          <div class="min-w-0 flex-1">
-            <span class="absolute inset-0" aria-hidden="true"></span>
-            <p class="text-sm font-medium text-gray-900">{{goal.title}}</p>
-            {% if let Some(desc) = goal.description %}
-            <p class="truncate text-sm text-gray-500">{{desc}}</p>
-            {% endif %}
-          </div>
-        </a>
+
+        {% include "partials/single_goal_card.html" %}
         {% endfor %}
-        <!-- TODO: push this to the bottom on the list maybe -->
         <a href="/groups/{{ group.id }}/goals/new?stage={{ loop.index0 }}" draggable="false"
           hx-get="/groups/{{ group.id }}/goals/new?stage={{ loop.index0 }}" hx-target="#main-content"
           hx-swap="afterbegin" hx-push-url="/groups/{{ group.id }}/goals/new?stage={{ loop.index0 }}"
-          class="relative flex items-center space-x-3 rounded border border-dashed border-gray-300 bg-white px-3 py-2 shadow-sm focus-within:ring-2 focus-within:ring-violet-500 focus-within:ring-offset-2 hover:border-gray-400 mt-auto">
+          class="relative w-full flex self-end items-center my-2 space-x-3 h-16 rounded border border-dashed border-zinc-500 bg-white px-3 py-2 shadow-sm focus-within:ring-2 focus-within:ring-violet-500 focus-within:ring-offset-2 hover:border-gray-400 mt-auto">
           <div class="min-w-0 flex-1">
             <span class="absolute inset-0" aria-hidden="true"></span>
-            <p class="text-sm font-medium text-gray-900">Add a Goal</p>
-            <p class="truncate text-sm text-gray-500">to &quot;{{stage}}&quot;</p>
+            <p class="text-sm italic text-gray-900">Add a Goal</p>
+            <p class="truncate text-sm italic text-gray-500">to &quot;{{stage}}&quot;</p>
           </div>
         </a>
       </div>

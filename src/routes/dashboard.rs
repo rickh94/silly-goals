@@ -1,3 +1,5 @@
+use std::unreachable;
+
 use actix_identity::Identity;
 use actix_session::Session;
 use actix_web::{
@@ -18,6 +20,10 @@ use crate::{
 };
 
 mod filters {
+    use chrono::prelude::*;
+
+    use crate::Goal;
+
     pub fn stage_color<S: PartialEq + std::convert::TryInto<usize> + Clone>(
         s: &S,
     ) -> ::askama::Result<&'static str> {
@@ -68,6 +74,19 @@ mod filters {
         match index.try_into() {
             Ok(x) if x < stages.len() => Ok(stages[x].clone()),
             _ => Ok("unknown".into()),
+        }
+    }
+
+    pub fn is_past_deadline(goal: &Goal) -> ::askama::Result<bool> {
+        if let Some(deadline) = &goal.deadline {
+            let deadline = NaiveDate::parse_from_str(&deadline, "%Y-%m-%d")
+                .map_err(|err| askama::Error::Custom(err.into()))?;
+
+            let current_date = Utc::now().naive_utc();
+
+            Ok(deadline < current_date.date())
+        } else {
+            Ok(false)
         }
     }
 }
@@ -260,13 +279,14 @@ async fn post_new_group(
 
     Ok(HttpResponse::SeeOther()
         .append_header(notification)
+        .append_header(("HX-Trigger-After-Settle", "updateLocation"))
         .append_header(("Location", format!("/groups/{}", created_group_id)))
         .finish())
 }
 
 #[derive(Template)]
-#[template(path = "pages/edit_group.html")]
-struct EditGroupPage {
+#[template(path = "pages/dashboard_edit_group.html")]
+struct DashboardEditGroupPage {
     title: String,
     user: User,
     group: Group,
@@ -281,10 +301,11 @@ struct EditGroupPartial {
     group: Group,
     tones: Vec<Tone>,
     csrf_token: CsrfToken,
+    return_to: String,
 }
 
-#[get("/groups/{id}/edit")]
-async fn edit_group(
+#[get("/dashboard/groups/{id}/edit")]
+async fn dashboard_edit_group(
     identity: Identity,
     path: web::Path<i64>,
     pool: web::Data<SqlitePool>,
@@ -340,6 +361,7 @@ async fn edit_group(
             tones: tones.clone(),
             group: group.clone(),
             csrf_token: csrf_token.clone(),
+            return_to: "/dashboard".into(),
         }
         .render()
         .map_err(ErrorInternalServerError)?;
@@ -353,7 +375,7 @@ async fn edit_group(
         .await
         .map_err(ErrorInternalServerError)?;
 
-    let body = EditGroupPage {
+    let body = DashboardEditGroupPage {
         title: "Silly Goals".into(),
         user,
         group,
@@ -367,17 +389,31 @@ async fn edit_group(
     Ok(HttpResponse::Ok().body(body))
 }
 
+#[derive(Deserialize)]
+struct EditGroupForm {
+    title: String,
+    description: Option<String>,
+    tone_id: i64,
+    csrftoken: String,
+    return_to: String,
+}
+
+/// Edit a group's basic information, either from the group page or the
+/// dashboard page
 #[post("/groups/{id}/edit")]
 async fn post_edit_group(
     identity: Identity,
     path: web::Path<i64>,
-    form: web::Form<GroupForm>,
+    form: web::Form<EditGroupForm>,
     session: Session,
     pool: web::Data<SqlitePool>,
     is_hx: IsHtmx,
 ) -> actix_web::Result<HttpResponse> {
     CsrfToken::verify_from_session(&session, &form.csrftoken)?;
     let group_id = path.into_inner();
+    if form.return_to != "/dashboard" && form.return_to != format!("/groups/{}", group_id) {
+        return Err(ErrorBadRequest("Invalid return_to"));
+    }
 
     let mut conn = pool
         .get_ref()
@@ -404,13 +440,28 @@ async fn post_edit_group(
     .map_err(ErrorInternalServerError)?;
 
     if *is_hx {
-        let groups = sqlx::query_as!(Group, "SELECT * FROM groups WHERE user_id = $1", user.id)
-            .fetch_all(&mut conn)
-            .await
-            .map_err(ErrorInternalServerError)?;
-        let body = DashboardPartial { groups }
+        let body = if form.return_to == "/dashboard" {
+            let groups = sqlx::query_as!(Group, "SELECT * FROM groups WHERE user_id = $1", user.id)
+                .fetch_all(&mut conn)
+                .await
+                .map_err(ErrorInternalServerError)?;
+            DashboardPartial { groups }
+                .render()
+                .map_err(ErrorInternalServerError)?
+        } else if form.return_to == format!("/groups/{}", group_id) {
+            let group = queries::get_group_with_info(&mut conn, user.id, group_id).await?;
+            let goals = queries::get_goals_for_group(&mut conn, group.id).await?;
+            let goals_in_stages = group_goals_by_stage(&goals);
+
+            ShowGroupPartial {
+                group: group.into(),
+                goals_in_stages,
+            }
             .render()
-            .map_err(ErrorInternalServerError)?;
+            .map_err(ErrorInternalServerError)?
+        } else {
+            unreachable!();
+        };
         let notification = hx_trigger_notification(
             format!("{} Updated", form.title),
             "Your group has been updated".into(),
@@ -424,7 +475,7 @@ async fn post_edit_group(
     }
 
     Ok(HttpResponse::SeeOther()
-        .insert_header(("Location", "/dashboard"))
+        .insert_header(("Location", form.return_to.to_owned()))
         .finish())
 }
 
@@ -963,6 +1014,14 @@ struct NewStage {
     stage: i64,
 }
 
+#[derive(Template)]
+#[template(path = "partials/single_goal_card.html")]
+struct SingleGoalCard {
+    stage_number: i64,
+    goal: Goal,
+    group: Group,
+}
+
 #[patch("/groups/{group_id}/goals/{goal_id}/stage")]
 async fn patch_goal_tone(
     identity: Identity,
@@ -980,9 +1039,9 @@ async fn patch_goal_tone(
 
     let user = queries::get_user_from_identity(&mut conn, &identity).await?;
 
-    // We don't need the group, but we need to validate that the user owns it
-    sqlx::query!(
-        r#"SELECT id FROM groups 
+    let group = sqlx::query_as!(
+        Group,
+        r#"SELECT * FROM groups 
         WHERE user_id = $1 AND id = $2;"#,
         user.id,
         group_id
@@ -1014,7 +1073,25 @@ async fn patch_goal_tone(
         ErrorInternalServerError(err)
     })?;
 
-    Ok(HttpResponse::Ok().finish())
+    let goal = sqlx::query_as!(
+        Goal,
+        "SELECT * FROM goals WHERE id = $1 AND group_id = $2",
+        goal_id,
+        group_id
+    )
+    .fetch_one(&mut conn)
+    .await
+    .map_err(ErrorInternalServerError)?;
+
+    let body = SingleGoalCard {
+        goal,
+        group,
+        stage_number: query.stage,
+    }
+    .render()
+    .map_err(ErrorInternalServerError)?;
+
+    Ok(HttpResponse::Ok().body(body))
 }
 
 #[delete("/groups/{group_id}/goals/{goal_id}")]
@@ -1057,4 +1134,87 @@ async fn delete_goal(
     .map_err(ErrorInternalServerError)?;
 
     Ok(HttpResponse::Ok().finish())
+}
+
+#[derive(Template)]
+#[template(path = "pages/group_edit_group.html")]
+struct GroupEditGroupPage {
+    title: String,
+    user: User,
+    group: GroupDisplay,
+    groups: Vec<GroupLink>,
+    goals_in_stages: Vec<Vec<Goal>>,
+    tones: Vec<Tone>,
+    csrf_token: CsrfToken,
+    return_to: String,
+}
+
+#[get("/groups/{id}/edit")]
+async fn group_edit_group(
+    identity: Identity,
+    path: web::Path<i64>,
+    pool: web::Data<SqlitePool>,
+    session: Session,
+    is_hx: IsHtmx,
+) -> actix_web::Result<HttpResponse> {
+    let group_id = path.into_inner();
+    let mut conn = pool
+        .get_ref()
+        .acquire()
+        .await
+        .map_err(ErrorInternalServerError)?;
+
+    let user = queries::get_user_from_identity(&mut conn, &identity).await?;
+
+    let group = queries::get_group_with_info(&mut conn, user.id, group_id).await?;
+
+    let csrf_token = CsrfToken::get_or_create(&session)?;
+
+    let tones = sqlx::query_as!(
+        Tone,
+        r#"SELECT 
+        id, name, stages as "stages: Json<Vec<String>>", deadline as "deadline: DeadlineType", global as "global: bool", 
+        greeting, unmet_behavior as "unmet_behavior: GoalBehavior", user_id 
+        FROM tones 
+        WHERE global = 1 OR user_id = $1;"#,
+        user.id
+    )
+    .fetch_all(&mut conn)
+    .await
+    .map_err(ErrorInternalServerError)?;
+
+    if *is_hx {
+        let body = EditGroupPartial {
+            tones: tones.clone(),
+            group: group.into(),
+            csrf_token: csrf_token.clone(),
+            return_to: format!("/groups/{}", group_id),
+        }
+        .render()
+        .map_err(ErrorInternalServerError)?;
+        return Ok(HttpResponse::Ok()
+            .insert_header(("HX-Trigger-After-Swap", "updateLocation"))
+            .body(body));
+    }
+
+    let groups = queries::get_group_links(&mut conn, user.id).await?;
+
+    let goals = queries::get_goals_for_group(&mut conn, group_id).await?;
+
+    let goals_in_stages = group_goals_by_stage(&goals);
+
+    let body = GroupEditGroupPage {
+        title: "Silly Goals".into(),
+        user,
+        group: group.clone().into(),
+        groups,
+        csrf_token,
+        tones,
+        return_to: format!("/groups/{}", group_id),
+        goals_in_stages,
+    }
+    .render()
+    .map_err(ErrorInternalServerError)?;
+
+    Ok(HttpResponse::Ok().body(body))
 }

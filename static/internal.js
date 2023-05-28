@@ -41,6 +41,7 @@ function prepareDeleteGroup(groupId) {
 
       if (res.ok) {
         htmx.ajax('GET', '/dashboard', "#main-content");
+        window.location.replace("/dashboard");
         document.getElementById(`group-nav-link-${groupId}`).remove()
         Alpine.store('notification').show(
           'Group Deleted',
@@ -127,6 +128,7 @@ async function updateGoalStage(event, droppedOn) {
   const newStage = droppedOn.dataset.stage;
   const oldStage = moving.dataset.stage;
   const goalId = moving.dataset.goalId;
+  removeDraggingPlaceholder(oldStage, moving.id);
   const groupId = moving.dataset.groupId;
 
   try {
@@ -138,7 +140,10 @@ async function updateGoalStage(event, droppedOn) {
     )
 
     if (res.ok) {
-      moving.dataset.stage = newStage;
+      // There's a little conditional rendering based on what stage we're in,
+      // it's simpler to have the server do it and swap it in after. Basically
+      // discount htmx swap.
+      moving.outerHTML = await res.text();
       Alpine.store('notification').show('Update Successful', 'Goal stage updated');
     } else {
       moving.remove();
@@ -156,9 +161,25 @@ async function updateGoalStage(event, droppedOn) {
   }
 }
 
+function removeDraggingPlaceholder(stage, id) {
+  document.getElementById(`dragging-${stage}-${id}`).remove();
+}
+
+function createDraggingPlaceholder(stage, id) {
+  let div = document.createElement('div');
+  div.className = "relative border px-3 py-2 shadow-sm border-orange-500 bg-orange-300 opacity-75 h-16 rounded";
+  div.id = `dragging-${stage}-${id}`;
+  return div;
+}
+
 function startDragging(event, dragging) {
   event.dataTransfer.effectAllowed = 'move';
   event.dataTransfer.setData('text/plain', dragging.id);
+}
+
+function insertPlaceholder(dragging) {
+  const stage = dragging.dataset.stage;
+  document.getElementById(`list-stage-${stage}`).prepend(createDraggingPlaceholder(stage, dragging.id));
 }
 
 

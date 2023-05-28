@@ -1,0 +1,19 @@
+<div class="flex justify-between">
+  <h2 class="font-bold text-3xl mx-4 mb-1 text-zinc-800">{{ group.title }}</h2>
+  <!-- TODO: add button to get group edit form -->
+  <a href="/groups/{{ group.id }}/edit" hx-get="/groups/{{ group.id }}/edit" hx-swap="afterbegin"
+    hx-target="#main-content" hx-push-url="/groups/{{ group.id }}/edit"
+    class="bg-violet-600 hover:bg-violet-400 px-3 py-2 relative flex flex-0 items-center justify-center gap-x-3 rounded border border-transparent shadow-sm text-sm font-semibold text-zinc-100">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-5 w-5 text-zinc-50">
+      <path
+        d="M18.75 12.75h1.5a.75.75 0 000-1.5h-1.5a.75.75 0 000 1.5zM12 6a.75.75 0 01.75-.75h7.5a.75.75 0 010 1.5h-7.5A.75.75 0 0112 6zM12 18a.75.75 0 01.75-.75h7.5a.75.75 0 010 1.5h-7.5A.75.75 0 0112 18zM3.75 6.75h1.5a.75.75 0 100-1.5h-1.5a.75.75 0 000 1.5zM5.25 18.75h-1.5a.75.75 0 010-1.5h1.5a.75.75 0 010 1.5zM3 12a.75.75 0 01.75-.75h7.5a.75.75 0 010 1.5h-7.5A.75.75 0 013 12zM9 3.75a2.25 2.25 0 100 4.5 2.25 2.25 0 000-4.5zM12.75 12a2.25 2.25 0 114.5 0 2.25 2.25 0 01-4.5 0zM9 15.75a2.25 2.25 0 100 4.5 2.25 2.25 0 000-4.5z" />
+    </svg>
+    Options
+  </a>
+</div>
+{% if let Some(desc) = group.description %}
+<p class="text-xl text-zinc-600 mx-4 mb-2">{{ desc }}</p>
+{% else %}
+<p class="text-xl text-zinc-600 mx-4 mb-2">{{ group.greeting }}</p>
+{% endif %}
+{% include "snippets/_kanban.html" %}

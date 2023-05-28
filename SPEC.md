@@ -84,8 +84,6 @@ Goal tracking application, but with attitude to be less boring and pressury.
 - [x] Setting of sassiness mode, and per-group
 - [x] Categories of goals
 - [x] User auth with webauthn
-- [ ] Light and Dark mode
-- [ ] Font options
 - [x] drag and drop kanban
 - [x] optional deadlines
 - [x] CRUD
@@ -130,3 +128,9 @@ Goal tracking application, but with attitude to be less boring and pressury.
 
 - [ ] good timezone support
 
+TODO: welcome message on first login with some walkthrough
+TODO: possibly implement old goals behavior
+TODO: fix missing deadlines on changed tone
+TODO: easter egg about the silly ghoul?
+TODO: improve accessibility for modals
+TODO: properly htmx-ify new group form or don't

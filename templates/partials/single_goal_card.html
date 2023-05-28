@@ -1,0 +1,21 @@
+{% let past_deadline = (goal|is_past_deadline && stage_number < 3) %} <!-- Goal Card -->
+  <a draggable="true" x-data="{ dragging: false }"
+    @dragstart="dragging = true; startDragging($event, $el); await $nextTick(); insertPlaceholder($el)"
+    @dragend="dragging = false; draggingFrom = false;" data-goal-id="{{goal.id}}" data-stage="{{stage_number}}"
+    data-group-id="{{group.id}}" :class="dragging ? 'cursor-grabbing' : 'cursor-grab'" x-show="!dragging"
+    href="/groups/{{group.id}}/goals/{{goal.id}}" hx-get="/groups/{{ group.id }}/goals/{{goal.id}}"
+    hx-push-url="/groups/{{group.id}}/goals/{{goal.id}}" hx-target="#main-content" hx-swap="afterbegin"
+    class="relative h-16 flex items-center rounded {% if past_deadline  %}border-2 border-rose-500 hover:border-rose-600{% else %}border border-zinc-500 hover:border-zinc-600{% endif %} bg-white px-3 py-2 shadow-sm focus-within:ring-2 focus-within:ring-violet-500 focus-within:ring-offset-2 "
+    id="goal-{{goal.id}}">
+    {% if past_deadline %}
+    <div class="sr-only deadline-warning">This goal is past its deadline</div>
+    {% endif %}
+    <div class="min-w-0 flex-1  flex flex-col justify-center">
+      <p class="font-semibold text-gray-900">{{goal.title}}</p>
+      {% if let Some(desc) = goal.description %}
+      <p class="truncate text-sm text-gray-500">
+        {{desc}}
+      </p>
+      {% endif %}
+    </div>
+  </a>

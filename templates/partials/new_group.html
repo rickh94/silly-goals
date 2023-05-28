@@ -5,7 +5,7 @@
     <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
       <form
         class="hx-fade-in hx-scale-in hx-fade-out hx-scale-out relative overflow-hidden rounded-lg bg-white px-4 pb-4 pt-5 space-y-2 text-left shadow-xl sm:my-8 w-full sm:max-w-lg sm:p-6"
-        action="/groups/new" method="POST" hx-boost="true" hx-swap="outerHTML swap:200ms">
+        action="/groups/new" method="POST">
         {{ csrf_token|safe }}
         <h2 class="font-bold text-xl text-stone-900 mb-1">New Group</h2>
         <div>

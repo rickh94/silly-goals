@@ -2,7 +2,7 @@
   <ul role="list" class="-mx-2 space-y-1">
     <li>
       <a href="/dashboard" hx-get="/dashboard" hx-target="#main-content" hx-swap="innerHTML" hx-push-url="/dashboard"
-        :class="$store.location.path === new URL($el.href).pathname ? 'bg-zinc-800 text-white' : 'text-zinc-400 hover:text-white hover:bg-zinc-800'"
+        :class="$store.location.path === new URL($el.href).pathname ? 'bg-white text-black' : 'text-zinc-800 hover:text-black hover:bg-white bg-zinc-300'"
         @click="navOpen = false" class="group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold">Dashboard
       </a>
     </li>
