@@ -1,3 +1,6 @@
 <h2 class="font-bold text-3xl mx-4 mb-1 text-zinc-800">{{ group.title }}</h2>
 <p class="text-xl text-zinc-600 mx-4 mb-2">{{ group.greeting }}</p>
 {% include "snippets/_kanban.html" %}
+<script>
+  Alpine.store('location').update();
+</script>

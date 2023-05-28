@@ -853,6 +853,11 @@ select {
   margin-right: auto;
 }
 
+.my-1 {
+  margin-top: 0.25rem;
+  margin-bottom: 0.25rem;
+}
+
 .my-4 {
   margin-top: 1rem;
   margin-bottom: 1rem;
@@ -1082,6 +1087,10 @@ select {
   max-width: 80rem;
 }
 
+.max-w-lg {
+  max-width: 32rem;
+}
+
 .max-w-md {
   max-width: 28rem;
 }
@@ -1096,10 +1105,6 @@ select {
 
 .max-w-xs {
   max-width: 20rem;
-}
-
-.max-w-lg {
-  max-width: 32rem;
 }
 
 .flex-1 {
@@ -2070,6 +2075,11 @@ select {
   color: rgb(24 24 27 / var(--tw-text-opacity));
 }
 
+.text-zinc-700 {
+  --tw-text-opacity: 1;
+  color: rgb(63 63 70 / var(--tw-text-opacity));
+}
+
 .underline {
   text-decoration-line: underline;
 }
@@ -2506,6 +2516,32 @@ body {
   transition: all 200ms ease-out;
 }
 
+.htmx-swapping .hx-fade-out {
+  opacity: 0;
+  transition: opacity 200ms ease-in;
+}
+
+.htmx-swapping .hx-scale-out {
+  transform: translateY(1rem);
+  transition: all 200ms ease-in;
+}
+
+.hx-fade-fast {
+  opacity: 1;
+  transition: opacity 100ms ease-out;
+}
+
+.htmx-added .hx-fade-fast,
+.htmx-added.hx-fade-fast {
+  opacity: 0;
+}
+
+.htmx-swapping .hx-fade-fast,
+.hx-fade-fast.htmx-swapping {
+  opacity: 0;
+  transition: opacity 100ms ease-in;
+}
+
 @media (min-width: 640px) {
   .htmx-added .hx-scale-in {
     transform: translateY(0) scale(0.95);
@@ -2514,6 +2550,10 @@ body {
   .hx-scale-in {
     transform: scale(1);
     transition: all 200ms ease-out;
+  }
+
+  .htmx-swapping .hx-scale-out {
+    transform: translateY(0) scale(0.95);
   }
 }
 

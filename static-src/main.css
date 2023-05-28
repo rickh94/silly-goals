@@ -95,6 +95,32 @@ body {
   transition: all 200ms ease-out;
 }
 
+.htmx-swapping .hx-fade-out {
+  opacity: 0;
+  transition: opacity 200ms ease-in;
+}
+
+.htmx-swapping .hx-scale-out {
+  transform: translateY(1rem);
+  transition: all 200ms ease-in;
+}
+
+.hx-fade-fast {
+  opacity: 1;
+  transition: opacity 100ms ease-out;
+}
+
+.htmx-added .hx-fade-fast,
+.htmx-added.hx-fade-fast {
+  opacity: 0;
+}
+
+.htmx-swapping .hx-fade-fast,
+.hx-fade-fast.htmx-swapping {
+  opacity: 0;
+  transition: opacity 100ms ease-in;
+}
+
 @media (min-width: 640px) {
   .htmx-added .hx-scale-in {
     transform: translateY(0) scale(0.95);
@@ -103,5 +129,9 @@ body {
   .hx-scale-in {
     transform: scale(1);
     transition: all 200ms ease-out;
+  }
+
+  .htmx-swapping .hx-scale-out {
+    transform: translateY(0) scale(0.95);
   }
 }

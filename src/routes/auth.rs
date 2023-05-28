@@ -1,6 +1,10 @@
 use crate::{
-    csrf_token::CsrfToken, htmx::IsHtmx, mail::*, queries, session_values::*, GroupLink,
-    SessionValue, User,
+    csrf_token::CsrfToken,
+    htmx::{self, IsHtmx},
+    mail::*,
+    queries,
+    session_values::*,
+    GroupLink, SessionValue, User,
 };
 use actix_identity::Identity;
 use actix_session::Session;
@@ -14,7 +18,7 @@ use askama::Template;
 use lettre::{AsyncSmtpTransport, AsyncTransport, Tokio1Executor};
 use log::{error, info};
 use serde::Deserialize;
-use sqlx::{types::Uuid, SqlitePool};
+use sqlx::{pool::PoolConnection, types::Uuid, Sqlite, SqlitePool};
 
 #[derive(Template)]
 #[template(path = "register.html")]
@@ -494,8 +498,6 @@ async fn logout(identity: Identity) -> HttpResponse {
         .finish()
 }
 
-// TODO:  implement profile editing
-
 #[derive(Template)]
 #[template(path = "pages/profile.html")]
 struct ProfilePage {
@@ -524,14 +526,7 @@ async fn profile(
         .map_err(ErrorInternalServerError)?;
     let user = queries::get_user_from_identity(&mut conn, &identity).await?;
 
-    let groups = sqlx::query_as!(
-        GroupLink,
-        "SELECT id, title FROM groups WHERE user_id = $1",
-        user.id
-    )
-    .fetch_all(&mut conn)
-    .await
-    .map_err(ErrorInternalServerError)?;
+    let groups = queries::get_group_links(&mut conn, user.id).await?;
 
     if *is_hx {
         let body = ProfilePartial { user }
@@ -575,4 +570,463 @@ async fn delete_profile(
     identity.logout();
 
     Ok(HttpResponse::Ok().finish())
+}
+
+#[derive(Template)]
+#[template(path = "pages/profile_edit_name.html")]
+struct ProfileEditNamePage {
+    title: String,
+    user: User,
+    groups: Vec<GroupLink>,
+    csrf_token: CsrfToken,
+}
+
+#[derive(Template)]
+#[template(path = "partials/profile_edit_name.html")]
+struct ProfileEditNamePartial {
+    user: User,
+    csrf_token: CsrfToken,
+}
+
+/// Edit user's name
+#[get("/profile/edit/name")]
+async fn profile_edit_name(
+    identity: Identity,
+    session: Session,
+    pool: web::Data<SqlitePool>,
+    is_hx: IsHtmx,
+) -> actix_web::Result<HttpResponse> {
+    let mut conn = pool
+        .get_ref()
+        .acquire()
+        .await
+        .map_err(ErrorInternalServerError)?;
+    let user = queries::get_user_from_identity(&mut conn, &identity).await?;
+
+    let csrf_token = CsrfToken::get_or_create(&session)?;
+
+    if *is_hx {
+        let body = ProfileEditNamePartial { user, csrf_token }
+            .render()
+            .map_err(ErrorInternalServerError)?;
+        return Ok(HttpResponse::Ok()
+            .insert_header(("HX-Trigger-After-Swap", "updateLocation"))
+            .body(body));
+    }
+
+    let groups = queries::get_group_links(&mut conn, user.id).await?;
+
+    let body = ProfileEditNamePage {
+        title: "Silly Goals".into(),
+        user,
+        groups,
+        csrf_token,
+    }
+    .render()
+    .map_err(ErrorInternalServerError)?;
+
+    Ok(HttpResponse::Ok().body(body))
+}
+
+#[derive(Deserialize)]
+struct UserNameForm {
+    name: String,
+    csrftoken: String,
+}
+
+#[post("/profile/edit/name")]
+async fn post_profile_edit_name(
+    identity: Identity,
+    session: Session,
+    pool: web::Data<SqlitePool>,
+    form: web::Form<UserNameForm>,
+    is_hx: IsHtmx,
+) -> actix_web::Result<HttpResponse> {
+    CsrfToken::verify_from_session(&session, &form.csrftoken)?;
+
+    let mut conn = pool
+        .get_ref()
+        .acquire()
+        .await
+        .map_err(ErrorInternalServerError)?;
+
+    let userid = identity.id().map_err(ErrorInternalServerError)?;
+    let user_uuid = Uuid::parse_str(&userid).map_err(ErrorInternalServerError)?;
+
+    sqlx::query!(
+        "UPDATE users SET name = $1 WHERE userid = $2;",
+        form.name,
+        user_uuid
+    )
+    .execute(&mut conn)
+    .await
+    .map_err(ErrorInternalServerError)?;
+
+    let user = queries::get_user_from_identity(&mut conn, &identity).await?;
+
+    if *is_hx {
+        let body = ProfilePartial { user }
+            .render()
+            .map_err(ErrorInternalServerError)?;
+        let notification = htmx::hx_trigger_notification(
+            "Name Updated".into(),
+            format!("Your name has been changed to {}", form.name),
+            htmx::NotificationVariant::Success,
+            true,
+        );
+        return Ok(HttpResponse::Ok()
+            .append_header(notification)
+            .append_header(("HX-Trigger", "updateLocation"))
+            .body(body));
+    }
+
+    let groups = queries::get_group_links(&mut conn, user.id).await?;
+
+    let body = ProfilePage {
+        title: "Silly Goals".into(),
+        user,
+        groups,
+    }
+    .render()
+    .map_err(ErrorInternalServerError)?;
+
+    Ok(HttpResponse::Ok().body(body))
+}
+
+#[derive(Template)]
+#[template(path = "pages/profile_edit_email.html")]
+struct ProfileEditEmailPage {
+    title: String,
+    user: User,
+    groups: Vec<GroupLink>,
+    csrf_token: CsrfToken,
+    error: Option<String>,
+}
+
+#[derive(Template)]
+#[template(path = "partials/profile_edit_email.html")]
+struct ProfileEditEmailPartial {
+    user: User,
+    csrf_token: CsrfToken,
+    error: Option<String>,
+}
+
+/// Edit user's email
+#[get("/profile/edit/email")]
+async fn profile_edit_email(
+    identity: Identity,
+    session: Session,
+    pool: web::Data<SqlitePool>,
+    is_hx: IsHtmx,
+) -> actix_web::Result<HttpResponse> {
+    LoginCode::remove(&session);
+    ChangeEmail::remove(&session);
+    let mut conn = pool
+        .get_ref()
+        .acquire()
+        .await
+        .map_err(ErrorInternalServerError)?;
+    let user = queries::get_user_from_identity(&mut conn, &identity).await?;
+
+    let csrf_token = CsrfToken::get_or_create(&session)?;
+
+    if *is_hx {
+        let body = ProfileEditEmailPartial {
+            user,
+            csrf_token,
+            error: None,
+        }
+        .render()
+        .map_err(ErrorInternalServerError)?;
+        return Ok(HttpResponse::Ok()
+            .insert_header(("HX-Trigger-After-Swap", "updateLocation"))
+            .body(body));
+    }
+
+    let groups = queries::get_group_links(&mut conn, user.id).await?;
+
+    let body = ProfileEditEmailPage {
+        title: "Silly Goals".into(),
+        user,
+        groups,
+        csrf_token,
+        error: None,
+    }
+    .render()
+    .map_err(ErrorInternalServerError)?;
+
+    Ok(HttpResponse::Ok().body(body))
+}
+
+#[derive(Deserialize)]
+struct UserEmailForm {
+    email: String,
+    csrftoken: String,
+}
+
+#[derive(Template)]
+#[template(path = "pages/profile_confirm_email.html")]
+struct ProfileConfirmEmailPage {
+    title: String,
+    user: User,
+    groups: Vec<GroupLink>,
+    csrf_token: CsrfToken,
+    error: Option<String>,
+}
+
+#[derive(Template)]
+#[template(path = "partials/profile_confirm_email.html")]
+struct ProfileConfirmEmailPartial {
+    csrf_token: CsrfToken,
+    error: Option<String>,
+}
+
+#[post("/profile/edit/email")]
+async fn post_profile_edit_email(
+    identity: Identity,
+    session: Session,
+    pool: web::Data<SqlitePool>,
+    form: web::Form<UserEmailForm>,
+    mailer: web::Data<AsyncSmtpTransport<Tokio1Executor>>,
+    is_hx: IsHtmx,
+) -> actix_web::Result<HttpResponse> {
+    CsrfToken::verify_from_session(&session, &form.csrftoken)?;
+    LoginCode::remove(&session);
+    ChangeEmail::remove(&session);
+
+    let mut conn = pool
+        .get_ref()
+        .acquire()
+        .await
+        .map_err(ErrorInternalServerError)?;
+
+    let user = queries::get_user_from_identity(&mut conn, &identity).await?;
+    let csrf_token = CsrfToken::get_or_create(&session)?;
+
+    let email_exists = sqlx::query_scalar!(
+        "SELECT EXISTS(SELECT 1 FROM users WHERE email = $1);",
+        form.email
+    )
+    .fetch_one(&mut conn)
+    .await
+    .map_err(ErrorInternalServerError)?;
+
+    if email_exists != 0 {
+        let body = if *is_hx {
+            ProfileEditEmailPartial {
+                user,
+                csrf_token,
+                error: Some("Email is not available".into()),
+            }
+            .render()
+            .map_err(ErrorInternalServerError)?
+        } else {
+            let groups = queries::get_group_links(&mut conn, user.id).await?;
+            ProfileEditEmailPage {
+                title: "Silly Goals".into(),
+                user,
+                csrf_token,
+                error: Some("Email is not available".into()),
+                groups,
+            }
+            .render()
+            .map_err(ErrorInternalServerError)?
+        };
+        return Ok(HttpResponse::Ok().body(body));
+    }
+
+    let change_email = ChangeEmail::from(&form.email);
+    change_email.save(&session)?;
+
+    let login_code = LoginCode::new();
+    login_code.save(&session)?;
+
+    let message = build_email_for_user(
+        &form.email,
+        "Confirmation Code for Silly Goals",
+        &format!("Use code {login_code} to confirm your email address."),
+    )?;
+
+    tokio::spawn(async move {
+        match mailer.send(message).await {
+            Ok(_) => (),
+            Err(e) => {
+                error!("Could not sent message: {}", e);
+            }
+        }
+    });
+
+    if *is_hx {
+        let body = ProfileConfirmEmailPartial {
+            csrf_token,
+            error: None,
+        }
+        .render()
+        .map_err(ErrorInternalServerError)?;
+        return Ok(HttpResponse::Ok().body(body));
+    }
+
+    let groups = queries::get_group_links(&mut conn, user.id).await?;
+
+    let body = ProfileConfirmEmailPage {
+        title: "Silly Goals".into(),
+        user,
+        groups,
+        csrf_token,
+        error: None,
+    }
+    .render()
+    .map_err(ErrorInternalServerError)?;
+
+    Ok(HttpResponse::Ok().body(body))
+}
+
+#[derive(Deserialize)]
+struct ConfirmEmailForm {
+    code: String,
+    csrftoken: String,
+}
+
+async fn confirm_email_invalid_session_response(
+    conn: &mut PoolConnection<Sqlite>,
+    identity: &Identity,
+    session: &Session,
+    is_hx: IsHtmx,
+) -> actix_web::Result<HttpResponse> {
+    let user = queries::get_user_from_identity(conn, &identity).await?;
+    let csrf_token = CsrfToken::get_or_create(&session)?;
+    let body = if *is_hx {
+        ProfileEditEmailPartial {
+            user,
+            csrf_token,
+            error: Some("Your code has expired, please try again.".into()),
+        }
+        .render()
+        .map_err(ErrorInternalServerError)?
+    } else {
+        let groups = queries::get_group_links(conn, user.id).await?;
+        ProfileEditEmailPage {
+            title: "Silly Goals".into(),
+            user,
+            groups,
+            csrf_token,
+            error: Some("Your code has expired, please try again.".into()),
+        }
+        .render()
+        .map_err(ErrorInternalServerError)?
+    };
+    Ok(HttpResponse::Ok()
+        .insert_header(("HX-Trigger-After-Swap", "updateLocation"))
+        .body(body))
+}
+
+#[post("/profile/edit/email/confirm")]
+async fn post_profile_confirm_email(
+    identity: Identity,
+    session: Session,
+    pool: web::Data<SqlitePool>,
+    form: web::Form<ConfirmEmailForm>,
+    is_hx: IsHtmx,
+) -> actix_web::Result<HttpResponse> {
+    CsrfToken::verify_from_session(&session, &form.csrftoken)?;
+
+    let mut conn = pool
+        .get_ref()
+        .acquire()
+        .await
+        .map_err(ErrorInternalServerError)?;
+
+    let correct_login_code = match LoginCode::get(&session) {
+        Ok(Some(e)) => e,
+        Ok(None) => {
+            // if there's no code, the session is invalid or expired, send back
+            // the original form with an error
+            return confirm_email_invalid_session_response(&mut conn, &identity, &session, is_hx)
+                .await;
+        }
+        _ => {
+            return Err(ErrorInternalServerError(anyhow!(
+                "Could not get code from session"
+            )))
+        }
+    };
+
+    // If the login code is wrong, send back the code form with an error.
+    if !correct_login_code.verify(&form.code) {
+        let csrf_token = CsrfToken::get_or_create(&session)?;
+        let body = if *is_hx {
+            ProfileConfirmEmailPartial {
+                csrf_token,
+                error: Some("Invalid code".into()),
+            }
+            .render()
+            .map_err(ErrorInternalServerError)?;
+        } else {
+            let user = queries::get_user_from_identity(&mut conn, &identity).await?;
+            let groups = queries::get_group_links(&mut conn, user.id).await?;
+            ProfileConfirmEmailPage {
+                title: "Silly Goals".into(),
+                csrf_token,
+                error: Some("Invalid code".into()),
+                user,
+                groups,
+            }
+            .render()
+            .map_err(ErrorInternalServerError)?;
+        };
+        return Ok(HttpResponse::Ok().body(body));
+    }
+
+    let change_email = match ChangeEmail::get(&session) {
+        Ok(Some(e)) => e,
+        Ok(None) => {
+            return confirm_email_invalid_session_response(&mut conn, &identity, &session, is_hx)
+                .await;
+        }
+        Err(err) => return Err(ErrorInternalServerError(err)),
+    };
+
+    let change_email = change_email.to_string();
+
+    let userid = identity.id().map_err(ErrorInternalServerError)?;
+    let user_uuid = Uuid::parse_str(&userid).map_err(ErrorInternalServerError)?;
+
+    sqlx::query!(
+        "UPDATE users SET email = $1 WHERE userid = $2;",
+        change_email,
+        user_uuid
+    )
+    .execute(&mut conn)
+    .await
+    .map_err(ErrorInternalServerError)?;
+
+    let user = queries::get_user_from_identity(&mut conn, &identity).await?;
+
+    if *is_hx {
+        let body = ProfilePartial { user }
+            .render()
+            .map_err(ErrorInternalServerError)?;
+        let notification = htmx::hx_trigger_notification(
+            "Email Updated".into(),
+            format!("Your email has been changed to {}", change_email),
+            htmx::NotificationVariant::Success,
+            true,
+        );
+        return Ok(HttpResponse::Ok()
+            .append_header(notification)
+            .append_header(("HX-Trigger", "updateLocation"))
+            .body(body));
+    }
+
+    let groups = queries::get_group_links(&mut conn, user.id).await?;
+
+    let body = ProfilePage {
+        title: "Silly Goals".into(),
+        user,
+        groups,
+    }
+    .render()
+    .map_err(ErrorInternalServerError)?;
+
+    Ok(HttpResponse::Ok().body(body))
 }

@@ -1,10 +1,10 @@
 <div class="relative z-10" aria-labelledby="modal-title" role="dialog" aria-modal="true" id="view-goal">
-  <div class="fixed inset-0 bg-gray-500 bg-opacity-75 hx-fade-in"></div>
+  <div class="fixed inset-0 bg-gray-500 bg-opacity-75 hx-fade-in hx-fade-out"></div>
 
   <div class="fixed inset-0 z-10 overflow-y-auto">
     <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0 sm:scale-100">
       <div
-        class="w-full relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl hx-fade-in hx-scale-in max-w-lg sm:my-8 sm:w-full sm:max-w-lg pb-4">
+        class="w-full relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl hx-fade-out hx-scale-out hx-fade-in hx-scale-in max-w-lg sm:my-8 sm:w-full sm:max-w-lg pb-4">
         <div>
           <div class="border-t border-gray-100">
             <dl class="divide-y divide-gray-100">
@@ -41,16 +41,16 @@
         </div>
         <div class="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse px-4">
           <a href="/groups/{{ group.id }}/goals/{{ goal.id }}/edit"
-            hx-get="/groups/{{ group.id }}/goals/{{ goal.id }}/edit" hx-target="#view-goal" hx-swap="outerHTML"
-            hx-push-url="/groups/{{ group.id }}/goals/{{ goal.id }}/edit"
+            hx-get="/groups/{{ group.id }}/goals/{{ goal.id }}/edit" hx-target="#view-goal"
+            hx-swap="outerHTML swap:200ms" hx-push-url="/groups/{{ group.id }}/goals/{{ goal.id }}/edit"
             class="inline-flex w-full justify-center rounded-md bg-amber-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-amber-500 sm:ml-3 sm:w-auto">Edit</a>
           <button type="button"
             class="mt-1 inline-flex w-full justify-center rounded-md bg-rose-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-rose-500 sm:ml-3 sm:mt-0 sm:w-auto"
             data-group-id="{{group.id}}" data-goal-id="{{goal.id}}" data-title="{{goal.title}}" x-data
             @click="confirmDeleteGoal($el) ">Delete</button>
-          <a href="/groups/{{group.id}}" hx-get="/groups/{{group.id}}" hx-target="#main-content" hx-swap="innerHTML"
-            hx-push-url="/groups/{{group.id}}"
-            class="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto">Cancel</a>
+          <a href="/groups/{{group.id}}" hx-get="/groups/{{group.id}}" hx-target="#main-content"
+            hx-swap="innerHTML swap:200ms" hx-push-url="/groups/{{group.id}}"
+            class="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto">Close</a>
         </div>
       </div>
     </div>

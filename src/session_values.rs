@@ -100,6 +100,37 @@ impl Display for LoginEmail {
 }
 
 #[derive(Debug, Serialize, Deserialize, Eq, PartialEq, Clone)]
+pub struct ChangeEmail(String);
+
+impl SessionValue for ChangeEmail {
+    fn save_name() -> &'static str {
+        "change_email"
+    }
+}
+
+impl Deref for ChangeEmail {
+    type Target = String;
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl<T> From<T> for ChangeEmail
+where
+    T: Into<String>,
+{
+    fn from(value: T) -> Self {
+        Self(value.into())
+    }
+}
+
+impl Display for ChangeEmail {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Eq, PartialEq, Clone)]
 pub struct UsedWebauthn(bool);
 
 impl SessionValue for UsedWebauthn {

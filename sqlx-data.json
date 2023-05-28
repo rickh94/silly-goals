@@ -1,5 +1,15 @@
 {
   "db": "SQLite",
+  "01e80c8a16e89c4a9eb5a8b778722b2bdb189d7aa55a99f1b289b7a29ef76fb3": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Right": 2
+      }
+    },
+    "query": "UPDATE users SET email = $1 WHERE userid = $2;"
+  },
   "023996ce864d463ba52bc63f7113136496f1de140d118706f043d6930eed3ffd": {
     "describe": {
       "columns": [],
@@ -208,6 +218,24 @@
     },
     "query": "SELECT * FROM groups WHERE user_id = $1"
   },
+  "4598023bdb43da03b7c3a450a7ee0386fb2e3cf551dd3f85444acf9c05e32cbf": {
+    "describe": {
+      "columns": [
+        {
+          "name": "EXISTS(SELECT 1 FROM users WHERE email = $1)",
+          "ordinal": 0,
+          "type_info": "Int"
+        }
+      ],
+      "nullable": [
+        false
+      ],
+      "parameters": {
+        "Right": 1
+      }
+    },
+    "query": "SELECT EXISTS(SELECT 1 FROM users WHERE email = $1);"
+  },
   "50293c2e54af11d4c2a553e29b671cef087a159c6ee7182d8ca929ecb748f3b7": {
     "describe": {
       "columns": [],
@@ -403,6 +431,16 @@
       }
     },
     "query": "SELECT id, userid as \"userid: Uuid\", email, name \n        FROM users \n        WHERE userid = $1;"
+  },
+  "789f6c6300319e69151bf31532f6681e9e77e2acdaddea6cbe4dcb31a1018f92": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Right": 2
+      }
+    },
+    "query": "UPDATE users SET name = $1 WHERE userid = $2;"
   },
   "7be40f87d038afb74f4bda91a53e7a4d75ff6ab92ab6b63470be35911e665c88": {
     "describe": {

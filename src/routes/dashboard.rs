@@ -259,8 +259,8 @@ async fn post_new_group(
     );
 
     Ok(HttpResponse::SeeOther()
-        .insert_header(notification)
-        .insert_header(("Location", format!("/groups/{}", created_group_id)))
+        .append_header(notification)
+        .append_header(("Location", format!("/groups/{}", created_group_id)))
         .finish())
 }
 
@@ -476,9 +476,7 @@ async fn get_group(
         }
         .render()
         .map_err(ErrorInternalServerError)?;
-        return Ok(HttpResponse::Ok()
-            .insert_header(("HX-Trigger-After-Swap", "updateLocation"))
-            .body(body));
+        return Ok(HttpResponse::Ok().body(body));
     }
 
     let groups = queries::get_group_links(&mut conn, user.id).await?;
@@ -952,10 +950,7 @@ async fn post_edit_goal(
         .render()
         .map_err(ErrorInternalServerError)?;
 
-        return Ok(HttpResponse::Ok()
-            .append_header(notification)
-            .append_header(("HX-Trigger", "updateLocation"))
-            .body(body));
+        return Ok(HttpResponse::Ok().append_header(notification).body(body));
     }
 
     Ok(HttpResponse::SeeOther()

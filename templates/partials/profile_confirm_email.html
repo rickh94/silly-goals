@@ -1,0 +1,36 @@
+<div class="relative z-10" aria-labelledby="modal-title" role="dialog" aria-modal="true" id="edit-email">
+  <div class="fixed inset-0 bg-gray-500 bg-opacity-75 hx-fade-in hx-fade-out"></div>
+  <div class="fixed inset-0 z-10 overflow-y-auto">
+    <div
+      class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0 hx-fade-in hx-scale-in hx-fade-out hx-scale-out">
+      <form action="/profile/edit/email/confirm" method="POST" hx-post="/profile/edit/email/confirm"
+        hx-target="#main-content" hx-swap="innerHTML swap:200ms"
+        class="w-full relative transform overflow-hidden rounded-lg bg-white px-4 pb-4 pt-5 space-y-2 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:p-6">
+        {{ csrf_token|safe }}
+        <h2 class="font-bold text-xl text-stone-900 mb-1">Edit Email</h2>
+        <p class="text-zinc-700 italic text-sm my-1">Check you email for a confirmation code and enter it below.</p>
+        <div>
+          <label for="title" class="block text-sm font-medium leading-6 text-gray-900">Code</label>
+          <div class="mt-2">
+            <input type="text" name="code" id="code" required
+              class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-violet-600 sm:text-sm sm:leading-6"
+              placeholder="000000">
+          </div>
+        </div>
+        {% if let Some(error) = error %}
+        <p class="text-sm text-rose-600 my-1">{{ error }}</p>
+        {% endif %}
+        <div>
+          <div class="mt-2 sm:mt-4 sm:flex sm:flex-row-reverse">
+            <button type="submit"
+              class="inline-flex w-full justify-center rounded-md bg-emerald-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-500 sm:ml-3 sm:w-auto">Get
+              Code</button>
+            <a href="/profile" hx-get="/profile" hx-target="#main-content" hx-swap="innerHTML swap:200ms"
+              hx-push-url="/profile"
+              class="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto">Cancel</a>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

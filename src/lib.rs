@@ -5,6 +5,8 @@ pub mod queries;
 pub mod routes;
 pub mod session_values;
 
+use std::str::FromStr;
+
 use actix_session::Session;
 use actix_web::{
     dev,
@@ -323,6 +325,22 @@ pub fn handle_unauthorized<B>(
     res.response_mut().headers_mut().insert(
         header::LOCATION,
         header::HeaderValue::from_str(redirect_to.as_ref())?,
+    );
+    res.response_mut().headers_mut().insert(
+        header::HeaderName::from_str("HX-Redirect").map_err(ErrorInternalServerError)?,
+        header::HeaderValue::from_str("true")?,
+    );
+    res.response_mut().headers_mut().insert(
+        header::HeaderName::from_str("HX-Location").map_err(ErrorInternalServerError)?,
+        header::HeaderValue::from_str(r#"{"path": "/login", "target": "html"}"#)?,
+    );
+    res.response_mut().headers_mut().insert(
+        header::HeaderName::from_str("HX-Refresh").map_err(ErrorInternalServerError)?,
+        header::HeaderValue::from_str("true")?,
+    );
+    res.response_mut().headers_mut().insert(
+        header::HeaderName::from_str("HX-Push-Url").map_err(ErrorInternalServerError)?,
+        header::HeaderValue::from_str("/location")?,
     );
     Ok(ErrorHandlerResponse::Response(res.map_into_left_body()))
 }
