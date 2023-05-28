@@ -68,24 +68,6 @@
     },
     "query": "SELECT * FROM goals WHERE id = $1 AND group_id = $2;"
   },
-  "25ddf8a166659ad6863dc0115c97182b7900d7b8c96781b59386cde6b0f3e2e3": {
-    "describe": {
-      "columns": [
-        {
-          "name": "id",
-          "ordinal": 0,
-          "type_info": "Int64"
-        }
-      ],
-      "nullable": [
-        false
-      ],
-      "parameters": {
-        "Right": 2
-      }
-    },
-    "query": "SELECT id FROM groups \n        WHERE user_id = $1 AND id = $2;"
-  },
   "27327078c409f87bb1429017b50d1417434a90c5dea5f16b87b3c57e6c70e247": {
     "describe": {
       "columns": [],
@@ -269,66 +251,6 @@
       }
     },
     "query": "SELECT id, title FROM groups WHERE user_id = $1"
-  },
-  "59b0da43aa14fa201382d37335f027d5018c8d4461417ad991ca8058a9234c31": {
-    "describe": {
-      "columns": [
-        {
-          "name": "id",
-          "ordinal": 0,
-          "type_info": "Int64"
-        },
-        {
-          "name": "title",
-          "ordinal": 1,
-          "type_info": "Text"
-        },
-        {
-          "name": "description",
-          "ordinal": 2,
-          "type_info": "Text"
-        },
-        {
-          "name": "tone_name",
-          "ordinal": 3,
-          "type_info": "Text"
-        },
-        {
-          "name": "tone_stages: Json<Vec<String>>",
-          "ordinal": 4,
-          "type_info": "Text"
-        },
-        {
-          "name": "greeting",
-          "ordinal": 5,
-          "type_info": "Text"
-        },
-        {
-          "name": "unmet_behavior: GoalBehavior",
-          "ordinal": 6,
-          "type_info": "Text"
-        },
-        {
-          "name": "deadline: DeadlineType",
-          "ordinal": 7,
-          "type_info": "Text"
-        }
-      ],
-      "nullable": [
-        false,
-        false,
-        true,
-        false,
-        false,
-        false,
-        false,
-        false
-      ],
-      "parameters": {
-        "Right": 2
-      }
-    },
-    "query": "SELECT \n        g.id,\n        g.title, \n        g.description, \n        t.name as tone_name, \n        t.stages as \"tone_stages: Json<Vec<String>>\", \n        t.greeting, \n        t.unmet_behavior as \"unmet_behavior: GoalBehavior\", \n        t.deadline as \"deadline: DeadlineType\"\n        FROM groups g\n        LEFT JOIN tones t\n        ON g.tone_id = t.id\n        WHERE g.user_id = $1 AND g.id = $2;"
   },
   "663db41f008547051d433e42101f4b6024e11f7de3cb046ae75448dd1634ae09": {
     "describe": {
@@ -541,6 +463,78 @@
       }
     },
     "query": "SELECT id as \"id: Uuid\", user_id, passkey\n        FROM webauthn_credentials\n        WHERE user_id = $1"
+  },
+  "8d81e48e8d12effde6bba88abeb184c3e62991c217a48385e7506af89287b16e": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int64"
+        },
+        {
+          "name": "title",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "description",
+          "ordinal": 2,
+          "type_info": "Text"
+        },
+        {
+          "name": "tone_id",
+          "ordinal": 3,
+          "type_info": "Int64"
+        },
+        {
+          "name": "user_id",
+          "ordinal": 4,
+          "type_info": "Int64"
+        },
+        {
+          "name": "tone_name",
+          "ordinal": 5,
+          "type_info": "Text"
+        },
+        {
+          "name": "tone_stages: Json<Vec<String>>",
+          "ordinal": 6,
+          "type_info": "Text"
+        },
+        {
+          "name": "greeting",
+          "ordinal": 7,
+          "type_info": "Text"
+        },
+        {
+          "name": "unmet_behavior: GoalBehavior",
+          "ordinal": 8,
+          "type_info": "Text"
+        },
+        {
+          "name": "deadline: DeadlineType",
+          "ordinal": 9,
+          "type_info": "Text"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        true,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "parameters": {
+        "Right": 2
+      }
+    },
+    "query": "SELECT \n        g.id,\n        g.title, \n        g.description, \n        g.tone_id,\n        g.user_id,\n        t.name as tone_name, \n        t.stages as \"tone_stages: Json<Vec<String>>\", \n        t.greeting, \n        t.unmet_behavior as \"unmet_behavior: GoalBehavior\", \n        t.deadline as \"deadline: DeadlineType\"\n        FROM groups g\n        LEFT JOIN tones t\n        ON g.tone_id = t.id\n        WHERE g.user_id = $1 AND g.id = $2;"
   },
   "973426fb8cf0455cb4abba330d9efed0ba750567a5d91c295507fe4ca016c1c7": {
     "describe": {
