@@ -128,9 +128,14 @@ Goal tracking application, but with attitude to be less boring and pressury.
 
 - [ ] good timezone support
 
-TODO: welcome message on first login with some walkthrough
 TODO: possibly implement old goals behavior
 TODO: fix missing deadlines on changed tone
 TODO: easter egg about the silly ghoul?
 TODO: improve accessibility for modals
 TODO: properly htmx-ify new group form or don't
+TODO: handle logged out users making htmx requests better
+TODO: setup outgoing mail from sillygoals domain
+TODO: make get started button larger
+TODO: registration email error handler
+TODO: handle soft deadlines and hard deadlines
+TODO: fix layout on mobile, mobile swap after tutorial lifts footer onto screen

@@ -215,7 +215,7 @@ async fn finish_registration(
 
     let new_user = sqlx::query_as!(
         User,
-        r#"SELECT id, userid as "userid: Uuid", email, name 
+        r#"SELECT id, userid as "userid: Uuid", email, name, is_new_user
         FROM users 
         WHERE userid = $1;"#,
         userid
@@ -324,7 +324,7 @@ async fn post_login(
 
     let user = sqlx::query_as!(
         User,
-        r#"SELECT id, userid as "userid: Uuid", name, email
+        r#"SELECT id, userid as "userid: Uuid", name, email, is_new_user
             FROM users
             WHERE email = Lower($1)"#,
         form.email

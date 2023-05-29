@@ -169,6 +169,7 @@ async fn main() -> Result<(), std::io::Error> {
             .service(auth::delete_profile)
             .service(auth::logout)
             .service(dashboard::dashboard)
+            .service(dashboard::finish_tutorial)
             .service(dashboard::new_group)
             .service(dashboard::post_new_group)
             .service(dashboard::dashboard_edit_group)

@@ -116,6 +116,7 @@ struct DashboardPage {
 #[template(path = "partials/dashboard.html")]
 struct DashboardPartial {
     groups: Vec<Group>,
+    user: User,
 }
 
 #[get("/dashboard")]
@@ -138,7 +139,7 @@ async fn dashboard(
         .map_err(ErrorInternalServerError)?;
 
     let body = if *is_hx && !hx_headers.boosted {
-        DashboardPartial { groups }
+        DashboardPartial { groups, user }
             .render()
             .map_err(ErrorInternalServerError)?
     } else {
@@ -153,6 +154,47 @@ async fn dashboard(
     Ok(HttpResponse::Ok()
         .insert_header(("HX-Trigger-After-Swap", "updateLocation"))
         .body(body))
+}
+
+#[get("/finish-tutorial")]
+async fn finish_tutorial(
+    identity: Identity,
+    pool: web::Data<SqlitePool>,
+    is_hx: IsHtmx,
+    hx_headers: HxHeaderInfo,
+) -> actix_web::Result<HttpResponse> {
+    let mut conn = pool
+        .get_ref()
+        .acquire()
+        .await
+        .map_err(ErrorInternalServerError)?;
+    let mut user = queries::get_user_from_identity(&mut conn, &identity).await?;
+
+    sqlx::query!(
+        r#"UPDATE users SET is_new_user = 0 WHERE id = $1;"#,
+        user.id
+    )
+    .execute(&mut conn)
+    .await
+    .map_err(ErrorInternalServerError)?;
+
+    user.is_new_user = false;
+
+    if *is_hx && !hx_headers.boosted {
+        let groups = sqlx::query_as!(Group, "SELECT * FROM groups WHERE user_id = $1", user.id)
+            .fetch_all(&mut conn)
+            .await
+            .map_err(ErrorInternalServerError)?;
+        let body = DashboardPartial { groups, user }
+            .render()
+            .map_err(ErrorInternalServerError)?;
+        return Ok(HttpResponse::Ok()
+            .insert_header(("HX-Trigger-After-Swap", "updateLocation"))
+            .body(body));
+    }
+    return Ok(HttpResponse::SeeOther()
+        .insert_header(("Location", "/dashboard"))
+        .finish());
 }
 
 #[derive(Template)]
@@ -445,7 +487,7 @@ async fn post_edit_group(
                 .fetch_all(&mut conn)
                 .await
                 .map_err(ErrorInternalServerError)?;
-            DashboardPartial { groups }
+            DashboardPartial { groups, user }
                 .render()
                 .map_err(ErrorInternalServerError)?
         } else if form.return_to == format!("/groups/{}", group_id) {

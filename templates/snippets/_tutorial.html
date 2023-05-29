@@ -1,0 +1,106 @@
+{% let num_steps = 4 %}
+<div class="relative z-50" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+  <div class="fixed inset-0 bg-zinc-500 bg-opacity-75 hx-fade-in hx-fade-out"></div>
+
+  <!-- TODO: add close button that dismisses the tutorial -->
+  <div class="fixed inset-0 z-50 overflow-y-auto isolate mt-20"
+    x-data="{ currentStep: 1, numSteps: $el.dataset.numSteps }" data-num-steps="{{ num_steps }}">
+    <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+      <div
+        class="relative overflow-hidden rounded-lg bg-white px-4 pb-4 pt-5 text-left shadow-xl hx-fade-in hx-scale-in hx-fade-out hx-scale-out sm:my-8 sm:w-full sm:max-w-2xl sm:p-6">
+        <!-- STEP 1 -->
+        <div x-show="currentStep === 1">
+          <h2 class="font-bold text-2xl text-zinc-900" id="modal-title">Get Started</h2>
+          <p class="text-zinc-800 mt-2">To get started, create your first group by clicking the "New Group" button, then
+            filling out the form with some information.</p>
+          <img src="/static/tutorial/new_group_button.png" alt="New Group Button" class="max-w-full">
+          <p class="text-zinc-800 mt-2">Once you create some groups, they'll show up here and in the sidebar (on small
+            devices, click in the upper left to open the sidebar).</p>
+        </div>
+        <!-- STEP 2 -->
+        <div x-show="currentStep === 2">
+          <h2 class="font-bold text-2xl text-zinc-900" id="modal-title">Setup Your Group</h2>
+          <p class="text-zinc-800 mt-2">First set the name and a description for your group of goals (if you want). This
+            could be something like <em class="italic">Personal Goals</em> or <em class="italic">Business Goals</em> or
+            <em class="italic">Training</em>.
+          </p>
+          <p class="text-zinc-800 mt-2">You'll need to select a "Tone" for your group. This will determine things like
+            how it behaves around deadlines, how it handles old goals, and what the tone of the displayed text is like.
+          </p>
+          <img src="/static/tutorial/tones.png" alt="Tone Selector" class="max-w-full">
+          <p class="text-zinc-800 mt-2 hidden sm:block"><strong class="font-bold">Gentle</strong> is the default. It's
+            fun and silly
+            with no deadlines at all, just go at your own pace. If you need tough love, pick <strong
+              class="font-bold">Snarky</strong>
+            for a less kind and gentle experience. Experiment with the different tones and see what works for you.</p>
+        </div>
+        <!-- STEP 3 -->
+        <div x-show="currentStep === 3">
+          <h2 class="font-bold text-2xl text-zinc-900" id="modal-title">Add Some Goals</h2>
+          <p class="text-zinc-800 mt-2">Once you've created your group, you'll be talke to the main group display
+            screen. This shows a kanban of all your goals in different stages.</p>
+          <img src="/static/tutorial/kanban.png" alt="Group Kanban" class="max-w-full rounded-md">
+          <p class="text-zinc-800 mt-2">Click on one of the <em class="italic">Add Goal</em> buttons and start adding
+            goals.</p>
+          <p class="text-zinc-800 mt-2">Once you have some goals, you can start dragging around to move them toward
+            completion!</p>
+        </div>
+        <!-- STEP 4 -->
+        <div x-show="currentStep === 4">
+          <h2 class="font-bold text-2xl text-zinc-900" id="modal-title">User Profile</h2>
+          <p class="text-zinc-800 mt-2">You'll find your name or email address in the top right corner or in the sidebar
+            navigation, click to see your profile.
+            <span class="hidden sm:block">You can edit your name and email address, logout, or even delete your account
+              (this is not reversible).</span>
+          </p>
+          <p class="text-zinc-800 mt-2">You can also register for <strong class="font-bold">Device
+              Authentication</strong> on supported devices and browsers.
+            <span class="hidden sm:block"> This will allow you to use the biometric authentication built into your
+              device to log in, instead of an email code.</span>
+          </p>
+          <img src="/static/tutorial/profile.png" alt="Profile and authentication sign up"
+            class="max-w-full rounded-md">
+        </div>
+
+        <div class="mt-5 sm:mt-6">
+          <nav class="flex items-center justify-between space-x-2" aria-label="Progress">
+            <button @click="currentStep--" :disabled="currentStep <= 1"
+              :class="currentStep <= 1 ? 'text-zinc-600 bg-zinc-100' : 'bg-white text-zinc-900 hover:bg-zinc-50'"
+              class="relative inline-flex items-center rounded-md px-3 py-2 text-sm font-semibold ring-1 ring-inset ring-zinc-300 focus-visible:outline-offset-0">Previous</button>
+            <div class="flex justify-cetner space-x-2">
+              <p class="text-sm font-medium sm:sr-only" x-text="`Step ${currentStep} of ${numSteps}`"></p>
+              <ol role="list" class="ml-8 hidden sm:flex items-center space-x-5">
+                <!-- REMINDER: i is zero index but steps are 1 indexed for puny humans, remember the offset! -->
+                {% for i in 1..=num_steps %}
+                <li x-data="{ thisStep: $el.dataset.stepNumber }" data-step-number="{{i}}">
+                  <button @click="currentStep = parseInt(thisStep)" x-show="currentStep > thisStep"
+                    class="block h-2.5 w-2.5 rounded-full bg-violet-600 hover:bg-violet-900">
+                    <span class="sr-only">Step {{i}}</span>
+                  </button>
+                  <button x-show="currentStep === parseInt(thisStep)" @click=""
+                    class="relative flex items-center justify-center" aria-current="step">
+                    <span class="absolute flex h-5 w-5 p-px" aria-hidden="true">
+                      <span class="h-full w-full rounded-full bg-violet-200"></span>
+                    </span>
+                    <span class="relative block h-2.5 w-2.5 rounded-full bg-violet-600" aria-hidden="true"></span>
+                    <span class="sr-only">Step {{i}}</span>
+                  </button>
+                  <button @click="currentStep = parseInt(thisStep)" x-show="currentStep < parseInt(thisStep)"
+                    class="block h-2.5 w-2.5 rounded-full bg-zinc-200 hover:bg-zinc-400">
+                    <span class="sr-only">Step {{i}}</span>
+                  </button>
+                </li>
+                {% endfor %}
+              </ol>
+            </div>
+            <button @click="currentStep++" x-show="currentStep < numSteps" autofocus
+              class="relative inline-flex items-center rounded-md px-3 py-2 bg-white text-zinc-900 hover:bg-zinc-50 text-sm font-semibold ring-1 ring-inset ring-zinc-300 focus-visible:outline-offset-0">Next</button>
+            <a href="/finish-tutorial" autofocus x-show="currentStep >= numSteps" hx-get="/finish-tutorial"
+              hx-target="#main-content" hx-swap="outerHTML swap:200ms" hx-push-url="/dashboard"
+              class="inline-flex w-auto justify-center rounded-md bg-violet-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-violet-500 sm:ml-3">Finish</a>
+          </nav>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

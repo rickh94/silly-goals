@@ -62,6 +62,7 @@ pub struct User {
     pub name: Option<String>,
     pub email: String,
     pub userid: Uuid,
+    pub is_new_user: bool,
 }
 
 #[derive(sqlx::Type, Debug, Clone)]
@@ -192,7 +193,7 @@ pub async fn seed_db(pool: &SqlitePool) {
     let email = "rickhenry@rickhenry.dev";
     let admin_user = if let Ok(Some(u)) = sqlx::query_as!(
         User,
-        r#"SELECT id, name, email, userid as "userid: Uuid" FROM users WHERE email = $1"#,
+        r#"SELECT id, name, email, userid as "userid: Uuid", is_new_user FROM users WHERE email = $1"#,
         email
     )
     .fetch_optional(&mut conn)
@@ -215,7 +216,7 @@ pub async fn seed_db(pool: &SqlitePool) {
 
         sqlx::query_as!(
             User,
-            r#"SELECT id, name, email, userid as "userid: Uuid" FROM users WHERE userid = $1"#,
+            r#"SELECT id, name, email, userid as "userid: Uuid", is_new_user FROM users WHERE userid = $1"#,
             userid
         )
         .fetch_one(&mut conn)

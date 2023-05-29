@@ -63,5 +63,7 @@
       </div>
     </a>
   </li>
-
 </ul>
+{% if user.is_new_user %}
+{% include "snippets/_tutorial.html" %}
+{% endif %}

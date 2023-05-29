@@ -18,7 +18,7 @@ pub async fn get_user_from_identity(
     let user_uuid = Uuid::parse_str(&userid).map_err(ErrorInternalServerError)?;
     sqlx::query_as!(
         User,
-        r#"SELECT id, name, userid as "userid: Uuid", email FROM users
+        r#"SELECT id, name, userid as "userid: Uuid", email, is_new_user FROM users
             WHERE userid = $1"#,
         user_uuid
     )
@@ -40,7 +40,7 @@ pub async fn get_user_by_email(
     let email = email.to_lowercase();
     sqlx::query_as!(
         User,
-        r#"SELECT id, email, name, userid as "userid: Uuid" FROM users WHERE email = $1"#,
+        r#"SELECT id, email, name, userid as "userid: Uuid", is_new_user FROM users WHERE email = $1"#,
         email,
     )
     .fetch_one(conn)
