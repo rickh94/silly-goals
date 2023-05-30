@@ -74,7 +74,7 @@ pub enum GoalBehavior {
     Mean,
 }
 
-#[derive(sqlx::Type, Debug, Clone)]
+#[derive(sqlx::Type, Debug, Clone, PartialEq)]
 #[sqlx(type_name = "deadline_type")]
 #[sqlx(rename_all = "lowercase")]
 pub enum DeadlineType {

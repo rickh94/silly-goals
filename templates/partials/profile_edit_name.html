@@ -1,19 +1,19 @@
 <div class="relative z-10" aria-labelledby="modal-title" role="dialog" aria-modal="true" id="edit-name">
   <div class="fixed inset-0 bg-gray-500 bg-opacity-75 hx-fade-in hx-fade-out"></div>
-  <div class="fixed inset-0 z-10 overflow-y-auto">
+  <div class="fixed inset-0 z-10 overflow-y-auto isolate">
     <div
       class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0 hx-fade-in hx-scale-in hx-fade-out hx-scale-out">
       <form action="/profile/edit/name" method="POST" hx-post="/profile/edit/name" hx-push-url="/profile"
         hx-target="#main-content" hx-swap="innerHTML swap:200ms"
         class="w-full relative transform overflow-hidden rounded-lg bg-white px-4 pb-4 pt-5 space-y-2 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:p-6">
         {{ csrf_token|safe }}
-        <h2 class="font-bold text-xl text-stone-900 mb-1">Edit Name</h2>
+        <h2 class="font-bold text-xl text-stone-900 mb-1" id="modal-title">Edit Name</h2>
         <div>
           <label for="title" class="block text-sm font-medium leading-6 text-gray-900">Name</label>
           <div class="mt-2">
             <input type="text" name="name" id="name" required
               class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-violet-600 sm:text-sm sm:leading-6"
-              value="{% if let Some(name) = user.name %}{{ name }}{% endif %}">
+              value="{% if let Some(name) = user.name %}{{ name }}{% endif %}" autofocus>
           </div>
         </div>
         <div>

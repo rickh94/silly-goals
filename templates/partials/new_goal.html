@@ -2,12 +2,12 @@
   <div class="fixed inset-0 bg-gray-500 bg-opacity-75 hx-fade-in hx-fade-out"></div>
 
   <div class="fixed inset-0 z-10 overflow-y-auto">
-    <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+    <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0 isolate">
       <form action="/groups/{{ group.id }}/goals/new" method="POST" hx-post="/groups/{{ group.id }}/goals/new"
         hx-push-url="/groups/{{ group.id }}" hx-target="#main-content" hx-swap="innerHTML swap:200ms"
         class="w-full relative space-y-2 overflow-hidden rounded-lg bg-white px-4 pb-4 pt-5 text-left shadow-xl hx-fade-in hx-scale-in hx-fade-out hx-scale-out sm:my-8 sm:w-full sm:max-w-lg sm:p-6">
         {{ csrf_token|safe }}
-        <h2 class="font-bold text-xl text-stone-900 mb-1">New Goal</h2>
+        <h2 class="font-bold text-xl text-stone-900 mb-1" id="moal-title">New Goal</h2>
         <div>
           <label for="title" class="block text-sm font-medium leading-6 text-gray-900">Title</label>
           <div class="mt-2">

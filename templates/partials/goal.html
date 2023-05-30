@@ -2,7 +2,7 @@
   <div class="fixed inset-0 bg-gray-500 bg-opacity-75 hx-fade-in hx-fade-out"></div>
 
   <div class="fixed inset-0 z-10 overflow-y-auto isolate">
-    <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0 sm:scale-100">
+    <div class="flex isolate min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0 sm:scale-100">
       <div
         class="w-full relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl hx-fade-out hx-scale-out hx-fade-in hx-scale-in max-w-lg sm:my-8 sm:w-full sm:max-w-lg pb-4">
         <div>
@@ -10,7 +10,7 @@
             <dl class="divide-y divide-gray-100">
               <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4">
                 <dt class="text-sm font-semibold leading-6 text-gray-900">Goal</dt>
-                <dd class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">{{ goal.title }}</dd>
+                <dd class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0" id="modal-title">{{ goal.title }}</dd>
               </div>
               <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4">
                 <dt class="text-sm font-semibold leading-6 text-gray-900">Description</dt>

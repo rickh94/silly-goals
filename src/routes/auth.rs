@@ -9,7 +9,7 @@ use crate::{
 use actix_identity::Identity;
 use actix_session::Session;
 use actix_web::{
-    error::{ErrorBadRequest, ErrorInternalServerError},
+    error::ErrorInternalServerError,
     web::{self, Form},
     *,
 };
@@ -96,23 +96,31 @@ async fn post_register(
         ErrorInternalServerError(err)
     })?;
 
-    if existing_user_count > 0 {
-        return Err(ErrorBadRequest(anyhow!(
-            "Could not register user with that email."
-        )));
-    }
+    let csrf_token = CsrfToken::get_or_create(&session)?;
 
-    let login_code = LoginCode::new();
-    let registration_email = RegistrationEmail::from(&form.email);
+    let message = if existing_user_count > 0 {
+        build_email_for_user(
+            &form.email,
+            "Silly Goals Registration",
+            "Someone tried to register a new Silly Goals account with \
+            this email. If this was you, Good News! you're already \
+            registered, and you can just login instead. If not, that's a \
+            little weird, but we stopped them. You might want to check for \
+            weird activity on your email",
+        )?
+    } else {
+        let login_code = LoginCode::new();
+        let registration_email = RegistrationEmail::from(&form.email);
 
-    login_code.save(&session)?;
-    registration_email.save(&session)?;
+        login_code.save(&session)?;
+        registration_email.save(&session)?;
 
-    let message = build_email_for_user(
-        &registration_email,
-        "Registration Code for Silly Goals",
-        &format!("Use code {login_code} to confirm your new account and log in."),
-    )?;
+        build_email_for_user(
+            &registration_email,
+            "Registration Code for Silly Goals",
+            &format!("Use code {login_code} to confirm your new account and log in."),
+        )?
+    };
 
     tokio::spawn(async move {
         match mailer.send(message).await {
@@ -122,8 +130,6 @@ async fn post_register(
             }
         }
     });
-
-    let csrf_token = CsrfToken::get_or_create(&session)?;
 
     Ok(RegisterFinish {
         title: "Register . Silly Goals".into(),
@@ -310,6 +316,7 @@ async fn post_login(
     session: Session,
     form: Form<LoginForm>,
     pool: web::Data<SqlitePool>,
+    mailer: web::Data<AsyncSmtpTransport<Tokio1Executor>>,
 ) -> Result<HttpResponse> {
     CsrfToken::verify_from_session(&session, form.csrftoken.as_str())?;
     LoginCode::remove(&session);
@@ -333,22 +340,34 @@ async fn post_login(
     .await
     .map_err(ErrorInternalServerError)?;
 
+    if let Some(user) = user {
+        let login_email = LoginEmail::from(&user.email);
+        login_email.save(&session)?;
+    } else {
+        let message = build_email_for_user(
+            &form.email,
+            "Login Attempt at Silly Goals",
+            "Someone tried to use your email to login at Silly Goals. \
+            If this was you, you'll need to register first. Otherwise you \
+            might want to look for other weird activity on your email. \
+            They were not able to log in.",
+        )?;
+
+        tokio::spawn(async move {
+            match mailer.send(message).await {
+                Ok(_) => (),
+                Err(e) => {
+                    error!("Could not send failed login message: {}", e);
+                }
+            }
+        });
+    }
+
     let body = LoginSelect {
         title: "Login . Silly Goals".into(),
     }
     .render()
     .map_err(ErrorInternalServerError)?;
-
-    if user.is_none() {
-        return Ok(HttpResponse::Ok().body(body));
-    }
-
-    // We have already checked for none, so unwrap is ok here.
-    #[allow(clippy::unwrap_used)]
-    let user = user.unwrap();
-
-    let login_email = LoginEmail::from(&user.email);
-    login_email.save(&session)?;
 
     Ok(HttpResponse::Ok().body(body))
 }
@@ -368,33 +387,25 @@ async fn login_with_code(
 ) -> actix_web::Result<HttpResponse> {
     let login_email = LoginEmail::get(&session).map_err(ErrorInternalServerError)?;
 
-    if login_email.is_none() {
-        return Ok(HttpResponse::SeeOther()
-            .insert_header(("Location", "/login"))
-            .finish());
-    }
+    if let Some(login_email) = login_email {
+        let login_code = LoginCode::new();
+        login_code.save(&session)?;
 
-    // We have already checked for none, so unwrap is ok here.
-    #[allow(clippy::unwrap_used)]
-    let login_email = login_email.unwrap();
+        let message = build_email_for_user(
+            &login_email,
+            "Login Code for Silly Goals",
+            &format!("Use code {login_code} to log in to your account."),
+        )?;
 
-    let login_code = LoginCode::new();
-    login_code.save(&session)?;
-
-    let message = build_email_for_user(
-        &login_email,
-        "Login Code for Silly Goals",
-        &format!("Use code {login_code} to log in to your account."),
-    )?;
-
-    tokio::spawn(async move {
-        match mailer.send(message).await {
-            Ok(_) => (),
-            Err(e) => {
-                error!("Could not sent message: {}", e);
+        tokio::spawn(async move {
+            match mailer.send(message).await {
+                Ok(_) => (),
+                Err(e) => {
+                    error!("Could not sent message: {}", e);
+                }
             }
-        }
-    });
+        });
+    }
 
     let csrf_token = CsrfToken::get_or_create(&session)?;
 

@@ -8,6 +8,9 @@
     <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
       <div
         class="relative overflow-hidden rounded-lg bg-white px-4 pb-4 pt-5 text-left shadow-xl hx-fade-in hx-scale-in hx-fade-out hx-scale-out sm:my-8 sm:w-full sm:max-w-2xl sm:p-6">
+            <a href="/finish-tutorial" hx-get="/finish-tutorial"
+              hx-target="#main-content" hx-swap="innerHTML swap:200ms" hx-push-url="/dashboard"
+              class="absolute top-4 right-4 w-auto justify-center rounded-md border-2 bg-white border-rose-600 px-3 py-1 text-sm font-semibold text-rose-600 shadow-sm hover:border-rose-500 hover:text-rose-500 ">Skip</a>
         <!-- STEP 1 -->
         <div x-show="currentStep === 1">
           <h2 class="font-bold text-2xl text-zinc-900" id="modal-title">Get Started</h2>
@@ -96,7 +99,7 @@
             <button @click="currentStep++" x-show="currentStep < numSteps" autofocus
               class="relative inline-flex items-center rounded-md px-3 py-2 bg-white text-zinc-900 hover:bg-zinc-50 text-sm font-semibold ring-1 ring-inset ring-zinc-300 focus-visible:outline-offset-0">Next</button>
             <a href="/finish-tutorial" autofocus x-show="currentStep >= numSteps" hx-get="/finish-tutorial"
-              hx-target="#main-content" hx-swap="outerHTML swap:200ms" hx-push-url="/dashboard"
+              hx-target="#main-content" hx-swap="innerHTML swap:200ms" hx-push-url="/dashboard"
               class="inline-flex w-auto justify-center rounded-md bg-violet-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-violet-500 sm:ml-3">Finish</a>
           </nav>
         </div>
