@@ -1,4 +1,4 @@
-{% let past_deadline = (goal|is_past_deadline && stage_number < 3) %} <!-- Goal Card -->
+{% let past_deadline = (goal|is_past_deadline && stage_number < 3 && group.deadline != DeadlineType::Off) %} <!-- Goal Card -->
   <a draggable="true" x-data="{ dragging: false }"
     @dragstart="dragging = true; startDragging($event, $el); await $nextTick(); insertPlaceholder($el)"
     @dragend="dragging = false; draggingFrom = false;" data-goal-id="{{goal.id}}" data-stage="{{stage_number}}"

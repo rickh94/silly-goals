@@ -47,7 +47,7 @@ Goal tracking application, but with attitude to be less boring and pressury.
   - hey you actually did something
   - you're not done yet?
   - oh finally, jeez
-- very mean about deadlines (bold, red, green, etc.)
+- mean about deadlines (bold, red, green, etc.)
 - nag about unmet goals angrily
 
 ### Just colors
@@ -127,7 +127,6 @@ Goal tracking application, but with attitude to be less boring and pressury.
 ## Other stuff
 
 - [ ] good timezone support
-
-TODO: possibly implement old goals behavior
-TODO: handle logged out users making htmx requests better
-TODO: handle soft deadlines and hard deadlines, need to make group deadline behavior available most of the time
+- [ ] handling of old goals (completed and incomplete)
+- [ ] making a difference between hard and soft deadlines
+- [ ] Generic not found helper

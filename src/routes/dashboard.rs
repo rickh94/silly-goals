@@ -16,80 +16,10 @@ use crate::{
     csrf_token::CsrfToken,
     htmx::{hx_trigger_notification, HxHeaderInfo},
     htmx::{IsHtmx, NotificationVariant},
-    queries, DeadlineType, Goal, GoalBehavior, Group, GroupDisplay, GroupLink, Tone, User,
+    queries,
+    templates::*,
+    DeadlineType, Goal, GoalBehavior, Group, Tone,
 };
-
-mod filters {
-    use chrono::prelude::*;
-
-    use crate::Goal;
-
-    pub fn stage_color<S: PartialEq + std::convert::TryInto<usize> + Clone>(
-        s: &S,
-    ) -> ::askama::Result<&'static str> {
-        let s = (*s).clone();
-        match s.try_into().unwrap_or(5) {
-            0 => Ok("bg-rose-500"),
-            1 => Ok("bg-amber-500"),
-            2 => Ok("bg-sky-500"),
-            3 => Ok("bg-emerald-500"),
-            _ => Ok("bg-gray-500"),
-        }
-    }
-
-    pub fn stage_color_light<S: PartialEq + std::convert::TryInto<usize> + Clone>(
-        s: &S,
-    ) -> ::askama::Result<&'static str> {
-        let s = (*s).clone();
-        match s.try_into().unwrap_or(5) {
-            0 => Ok("bg-rose-200"),
-            1 => Ok("bg-amber-200"),
-            2 => Ok("bg-sky-200"),
-            3 => Ok("bg-emerald-200"),
-            _ => Ok("bg-gray-200"),
-        }
-    }
-    pub fn stage_border_light<S: PartialEq + std::convert::TryInto<usize> + Clone>(
-        s: &S,
-    ) -> ::askama::Result<&'static str> {
-        let s = (*s).clone();
-        match s.try_into().unwrap_or(5) {
-            0 => Ok("border-rose-200"),
-            1 => Ok("border-amber-200"),
-            2 => Ok("border-sky-200"),
-            3 => Ok("border-emerald-200"),
-            _ => Ok("border-gray-200"),
-        }
-    }
-
-    pub fn stage_loop_comp(stage: &i64, index: &usize) -> ::askama::Result<bool> {
-        Ok(*stage as usize == *index)
-    }
-
-    pub fn stage_text<S: std::convert::TryInto<usize> + Clone>(
-        index: &S,
-        stages: &Vec<String>,
-    ) -> ::askama::Result<String> {
-        let index = (*index).clone();
-        match index.try_into() {
-            Ok(x) if x < stages.len() => Ok(stages[x].clone()),
-            _ => Ok("unknown".into()),
-        }
-    }
-
-    pub fn is_past_deadline(goal: &Goal) -> ::askama::Result<bool> {
-        if let Some(deadline) = &goal.deadline {
-            let deadline = NaiveDate::parse_from_str(&deadline, "%Y-%m-%d")
-                .map_err(|err| askama::Error::Custom(err.into()))?;
-
-            let current_date = Utc::now().naive_utc();
-
-            Ok(deadline < current_date.date())
-        } else {
-            Ok(false)
-        }
-    }
-}
 
 fn group_goals_by_stage(goals: &[Goal]) -> Vec<Vec<Goal>> {
     let mut goals_in_stages = vec![vec![]; 4];
@@ -102,21 +32,6 @@ fn group_goals_by_stage(goals: &[Goal]) -> Vec<Vec<Goal>> {
         }
     }
     goals_in_stages
-}
-
-#[derive(Template)]
-#[template(path = "pages/dashboard.html")]
-struct DashboardPage {
-    title: String,
-    user: User,
-    groups: Vec<Group>,
-}
-
-#[derive(Template)]
-#[template(path = "partials/dashboard.html")]
-struct DashboardPartial {
-    groups: Vec<Group>,
-    user: User,
 }
 
 #[get("/dashboard")]
@@ -195,23 +110,6 @@ async fn finish_tutorial(
     return Ok(HttpResponse::SeeOther()
         .insert_header(("Location", "/dashboard"))
         .finish());
-}
-
-#[derive(Template)]
-#[template(path = "pages/new_group.html")]
-struct NewGroupPage {
-    title: String,
-    user: User,
-    tones: Vec<Tone>,
-    groups: Vec<Group>,
-    csrf_token: CsrfToken,
-}
-
-#[derive(Template)]
-#[template(path = "partials/new_group.html")]
-struct NewGroupPartial {
-    tones: Vec<Tone>,
-    csrf_token: CsrfToken,
 }
 
 #[get("/groups/new")]
@@ -324,26 +222,6 @@ async fn post_new_group(
         .append_header(("HX-Trigger-After-Settle", "updateLocation"))
         .append_header(("Location", format!("/groups/{}", created_group_id)))
         .finish())
-}
-
-#[derive(Template)]
-#[template(path = "pages/dashboard_edit_group.html")]
-struct DashboardEditGroupPage {
-    title: String,
-    user: User,
-    group: Group,
-    groups: Vec<Group>,
-    tones: Vec<Tone>,
-    csrf_token: CsrfToken,
-}
-
-#[derive(Template)]
-#[template(path = "partials/edit_group.html")]
-struct EditGroupPartial {
-    group: Group,
-    tones: Vec<Tone>,
-    csrf_token: CsrfToken,
-    return_to: String,
 }
 
 #[get("/dashboard/groups/{id}/edit")]
@@ -521,23 +399,6 @@ async fn post_edit_group(
         .finish())
 }
 
-#[derive(Template)]
-#[template(path = "pages/group.html")]
-struct ShowGroupPage {
-    title: String,
-    user: User,
-    group: GroupDisplay,
-    goals_in_stages: Vec<Vec<Goal>>,
-    groups: Vec<GroupLink>,
-}
-
-#[derive(Template)]
-#[template(path = "partials/group.html")]
-struct ShowGroupPartial {
-    group: GroupDisplay,
-    goals_in_stages: Vec<Vec<Goal>>,
-}
-
 /// Get a group and its goals by the group id
 #[get("/groups/{id}")]
 async fn get_group(
@@ -621,26 +482,6 @@ async fn delete_group(
 #[derive(Debug, Deserialize)]
 struct InitialStage {
     stage: Option<usize>,
-}
-
-#[derive(Template)]
-#[template(path = "pages/new_goal.html")]
-struct NewGoalPage {
-    title: String,
-    user: User,
-    group: GroupDisplay,
-    goals_in_stages: Vec<Vec<Goal>>,
-    selected_stage: usize,
-    csrf_token: CsrfToken,
-    groups: Vec<GroupLink>,
-}
-
-#[derive(Template)]
-#[template(path = "partials/new_goal.html")]
-struct NewGoalPartial {
-    group: GroupDisplay,
-    selected_stage: usize,
-    csrf_token: CsrfToken,
 }
 
 #[get("/groups/{id}/goals/new")]
@@ -784,24 +625,6 @@ async fn post_new_goal(
     }
 }
 
-#[derive(Template)]
-#[template(path = "pages/goal.html")]
-struct ShowGoalPage {
-    title: String,
-    user: User,
-    goal: Goal,
-    group: GroupDisplay,
-    goals_in_stages: Vec<Vec<Goal>>,
-    groups: Vec<GroupLink>,
-}
-
-#[derive(Template)]
-#[template(path = "partials/goal.html")]
-struct ShowGoalPartial {
-    goal: Goal,
-    group: GroupDisplay,
-}
-
 #[get("/groups/{group_id}/goals/{goal_id}")]
 async fn get_goal(
     identity: Identity,
@@ -871,26 +694,6 @@ async fn get_goal(
     .map_err(ErrorInternalServerError)?;
 
     Ok(HttpResponse::Ok().body(body))
-}
-
-#[derive(Template)]
-#[template(path = "pages/edit_goal.html")]
-struct EditGoalPage {
-    title: String,
-    user: User,
-    group: GroupDisplay,
-    goals_in_stages: Vec<Vec<Goal>>,
-    csrf_token: CsrfToken,
-    goal: Goal,
-    groups: Vec<GroupLink>,
-}
-
-#[derive(Template)]
-#[template(path = "partials/edit_goal.html")]
-struct EditGoalPartial {
-    group: GroupDisplay,
-    csrf_token: CsrfToken,
-    goal: Goal,
 }
 
 #[get("/groups/{group_id}/goals/{goal_id}/edit")]
@@ -1056,14 +859,6 @@ struct NewStage {
     stage: i64,
 }
 
-#[derive(Template)]
-#[template(path = "partials/single_goal_card.html")]
-struct SingleGoalCard {
-    stage_number: i64,
-    goal: Goal,
-    group: Group,
-}
-
 #[patch("/groups/{group_id}/goals/{goal_id}/stage")]
 async fn patch_goal_tone(
     identity: Identity,
@@ -1081,19 +876,7 @@ async fn patch_goal_tone(
 
     let user = queries::get_user_from_identity(&mut conn, &identity).await?;
 
-    let group = sqlx::query_as!(
-        Group,
-        r#"SELECT * FROM groups 
-        WHERE user_id = $1 AND id = $2;"#,
-        user.id,
-        group_id
-    )
-    .fetch_one(&mut conn)
-    .await
-    .map_err(|err| match err {
-        sqlx::Error::RowNotFound => ErrorNotFound(err),
-        e => ErrorInternalServerError(e),
-    })?;
+    let group = queries::get_group_with_info(&mut conn, user.id, group_id).await?;
 
     if query.stage > 4 || query.stage < 0 {
         return Err(ErrorBadRequest("Stage must be between 0 and 4"));
@@ -1127,7 +910,7 @@ async fn patch_goal_tone(
 
     let body = SingleGoalCard {
         goal,
-        group,
+        group: group.into(),
         stage_number: query.stage,
     }
     .render()
@@ -1176,19 +959,6 @@ async fn delete_goal(
     .map_err(ErrorInternalServerError)?;
 
     Ok(HttpResponse::Ok().finish())
-}
-
-#[derive(Template)]
-#[template(path = "pages/group_edit_group.html")]
-struct GroupEditGroupPage {
-    title: String,
-    user: User,
-    group: GroupDisplay,
-    groups: Vec<GroupLink>,
-    goals_in_stages: Vec<Vec<Goal>>,
-    tones: Vec<Tone>,
-    csrf_token: CsrfToken,
-    return_to: String,
 }
 
 #[get("/groups/{id}/edit")]

@@ -4,6 +4,7 @@ pub mod mail;
 pub mod queries;
 pub mod routes;
 pub mod session_values;
+pub mod templates;
 
 use std::str::FromStr;
 

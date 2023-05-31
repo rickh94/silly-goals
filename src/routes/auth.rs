@@ -4,7 +4,8 @@ use crate::{
     mail::*,
     queries,
     session_values::*,
-    GroupLink, SessionValue, User,
+    templates::*,
+    SessionValue, User,
 };
 use actix_identity::Identity;
 use actix_session::Session;
@@ -19,13 +20,6 @@ use lettre::{AsyncSmtpTransport, AsyncTransport, Tokio1Executor};
 use log::{error, info};
 use serde::Deserialize;
 use sqlx::{pool::PoolConnection, types::Uuid, Sqlite, SqlitePool};
-
-#[derive(Template)]
-#[template(path = "register.html")]
-struct RegisterStart {
-    title: String,
-    csrf_token: CsrfToken,
-}
 
 /// Start Registration for the user account
 #[get("register")]
@@ -47,14 +41,6 @@ async fn register(session: Session, identity: Option<Identity>) -> Result<HttpRe
     .map_err(ErrorInternalServerError)?;
 
     Ok(HttpResponse::Ok().body(body))
-}
-
-#[derive(Template)]
-#[template(path = "register_finish.html")]
-struct RegisterFinish {
-    title: String,
-    csrf_token: CsrfToken,
-    error: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -246,13 +232,6 @@ async fn finish_registration(
         .finish())
 }
 
-#[derive(Template)]
-#[template(path = "login.html")]
-struct LoginStart {
-    title: String,
-    csrf_token: CsrfToken,
-}
-
 /// Start Login for the user account
 #[get("login")]
 async fn login(
@@ -296,12 +275,6 @@ async fn login(
     .map_err(ErrorInternalServerError)?;
 
     Ok(HttpResponse::Ok().body(body))
-}
-
-#[derive(Template)]
-#[template(path = "login_select.html")]
-struct LoginSelect {
-    title: String,
 }
 
 #[derive(Deserialize)]
@@ -370,14 +343,6 @@ async fn post_login(
     .map_err(ErrorInternalServerError)?;
 
     Ok(HttpResponse::Ok().body(body))
-}
-
-#[derive(Template)]
-#[template(path = "login_finish.html")]
-struct LoginFinish {
-    title: String,
-    csrf_token: CsrfToken,
-    error: Option<String>,
 }
 
 #[get("/login-code")]
@@ -509,20 +474,6 @@ async fn logout(identity: Identity) -> HttpResponse {
         .finish()
 }
 
-#[derive(Template)]
-#[template(path = "pages/profile.html")]
-struct ProfilePage {
-    title: String,
-    user: User,
-    groups: Vec<GroupLink>,
-}
-
-#[derive(Template)]
-#[template(path = "partials/profile.html")]
-struct ProfilePartial {
-    user: User,
-}
-
 /// Display user profie information
 #[get("/profile")]
 async fn profile(
@@ -581,22 +532,6 @@ async fn delete_profile(
     identity.logout();
 
     Ok(HttpResponse::Ok().finish())
-}
-
-#[derive(Template)]
-#[template(path = "pages/profile_edit_name.html")]
-struct ProfileEditNamePage {
-    title: String,
-    user: User,
-    groups: Vec<GroupLink>,
-    csrf_token: CsrfToken,
-}
-
-#[derive(Template)]
-#[template(path = "partials/profile_edit_name.html")]
-struct ProfileEditNamePartial {
-    user: User,
-    csrf_token: CsrfToken,
 }
 
 /// Edit user's name
@@ -704,24 +639,6 @@ async fn post_profile_edit_name(
     Ok(HttpResponse::Ok().body(body))
 }
 
-#[derive(Template)]
-#[template(path = "pages/profile_edit_email.html")]
-struct ProfileEditEmailPage {
-    title: String,
-    user: User,
-    groups: Vec<GroupLink>,
-    csrf_token: CsrfToken,
-    error: Option<String>,
-}
-
-#[derive(Template)]
-#[template(path = "partials/profile_edit_email.html")]
-struct ProfileEditEmailPartial {
-    user: User,
-    csrf_token: CsrfToken,
-    error: Option<String>,
-}
-
 /// Edit user's email
 #[get("/profile/edit/email")]
 async fn profile_edit_email(
@@ -773,23 +690,6 @@ async fn profile_edit_email(
 struct UserEmailForm {
     email: String,
     csrftoken: String,
-}
-
-#[derive(Template)]
-#[template(path = "pages/profile_confirm_email.html")]
-struct ProfileConfirmEmailPage {
-    title: String,
-    user: User,
-    groups: Vec<GroupLink>,
-    csrf_token: CsrfToken,
-    error: Option<String>,
-}
-
-#[derive(Template)]
-#[template(path = "partials/profile_confirm_email.html")]
-struct ProfileConfirmEmailPartial {
-    csrf_token: CsrfToken,
-    error: Option<String>,
 }
 
 #[post("/profile/edit/email")]

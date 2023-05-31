@@ -6,7 +6,7 @@ use actix_web::{
     cookie::Key,
     get,
     http::StatusCode,
-    middleware::{Compress, ErrorHandlers, Logger},
+    middleware::{self, Compress, ErrorHandlers, Logger},
     web, App, HttpServer, Responder,
 };
 use actix_web_static_files::ResourceFiles;
@@ -136,6 +136,11 @@ async fn main() -> Result<(), std::io::Error> {
     HttpServer::new(move || {
         let generated = generate();
         App::new()
+            .wrap(middleware::DefaultHeaders::new().add(("X-Frame-Options", "DENY")))
+            .wrap(
+                middleware::DefaultHeaders::new()
+                    .add(("Content-Security-Policy", "frame-ancestors 'none'")),
+            )
             .wrap(SessionMiddleware::new(
                 redis_store.clone(),
                 secret_key.clone(),

@@ -2,21 +2,24 @@
 <div class="relative z-50" aria-labelledby="modal-title" role="dialog" aria-modal="true">
   <div class="fixed inset-0 bg-zinc-500 bg-opacity-75 hx-fade-in hx-fade-out"></div>
 
-  <!-- TODO: add close button that dismisses the tutorial -->
+  <!-- TODO: replace the whole thing with a nice video, move to a help page, maybe make the video available on an external page. -->
   <div class="fixed inset-0 z-50 overflow-y-auto isolate mt-20"
     x-data="{ currentStep: 1, numSteps: $el.dataset.numSteps }" data-num-steps="{{ num_steps }}">
     <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
       <div
         class="relative overflow-hidden rounded-lg bg-white px-4 pb-4 pt-5 text-left shadow-xl hx-fade-in hx-scale-in hx-fade-out hx-scale-out sm:my-8 sm:w-full sm:max-w-2xl sm:p-6">
-            <a href="/finish-tutorial" hx-get="/finish-tutorial"
-              hx-target="#main-content" hx-swap="innerHTML swap:200ms" hx-push-url="/dashboard"
-              class="absolute top-4 right-4 w-auto justify-center rounded-md border-2 bg-white border-rose-600 px-3 py-1 text-sm font-semibold text-rose-600 shadow-sm hover:border-rose-500 hover:text-rose-500 ">Skip</a>
+        <a href="/finish-tutorial" hx-get="/finish-tutorial" hx-target="#main-content" hx-swap="innerHTML swap:200ms"
+          hx-push-url="/dashboard"
+          class="absolute top-4 right-4 w-auto justify-center rounded-md border-2 bg-white border-rose-600 px-3 py-1 text-sm font-semibold text-rose-600 shadow-sm hover:border-rose-500 hover:text-rose-500 ">Skip</a>
         <!-- STEP 1 -->
         <div x-show="currentStep === 1">
           <h2 class="font-bold text-2xl text-zinc-900" id="modal-title">Get Started</h2>
           <p class="text-zinc-800 mt-2">To get started, create your first group by clicking the "New Group" button, then
             filling out the form with some information.</p>
-          <img src="/static/tutorial/new_group_button.png" alt="New Group Button" class="max-w-full">
+          <figure class="w-full flex justify-center">
+            <img src="/static/tutorial/new_group_button.png" alt="New Group Button"
+              class="shadow-lg rounded-md max-w-full">
+          </figure>
           <p class="text-zinc-800 mt-2">Once you create some groups, they'll show up here and in the sidebar (on small
             devices, click in the upper left to open the sidebar).</p>
         </div>
@@ -30,7 +33,9 @@
           <p class="text-zinc-800 mt-2">You'll need to select a "Tone" for your group. This will determine things like
             how it behaves around deadlines, how it handles old goals, and what the tone of the displayed text is like.
           </p>
-          <img src="/static/tutorial/tones.png" alt="Tone Selector" class="max-w-full">
+          <figure class="w-full flex justify-center">
+            <img src="/static/tutorial/tones.png" alt="Tone Selector" class="max-w-full shadow-lg rounded-md">
+          </figure>
           <p class="text-zinc-800 mt-2 hidden sm:block"><strong class="font-bold">Gentle</strong> is the default. It's
             fun and silly
             with no deadlines at all, just go at your own pace. If you need tough love, pick <strong
@@ -42,7 +47,9 @@
           <h2 class="font-bold text-2xl text-zinc-900" id="modal-title">Add Some Goals</h2>
           <p class="text-zinc-800 mt-2">Once you've created your group, you'll be talke to the main group display
             screen. This shows a kanban of all your goals in different stages.</p>
-          <img src="/static/tutorial/kanban.png" alt="Group Kanban" class="max-w-full rounded-md">
+          <figure class="w-full flex justify-center">
+            <img src="/static/tutorial/kanban.png" alt="Group Kanban" class="max-w-full rounded-md shadow-lg">
+          </figure>
           <p class="text-zinc-800 mt-2">Click on one of the <em class="italic">Add Goal</em> buttons and start adding
             goals.</p>
           <p class="text-zinc-800 mt-2">Once you have some goals, you can start dragging around to move them toward
@@ -61,8 +68,12 @@
             <span class="hidden sm:block"> This will allow you to use the biometric authentication built into your
               device to log in, instead of an email code.</span>
           </p>
-          <img src="/static/tutorial/profile.png" alt="Profile and authentication sign up"
-            class="max-w-full rounded-md">
+          <figure class="w-full flex justify-center h-32">
+            <video controls class="h-32">
+              <source src="https://f000.backblazeb2.com/file/rick-webfiles/sillygoals/faceid-signin-sillygoals.webm" type="video/webm" />
+              <source src="https://f000.backblazeb2.com/file/rick-webfiles/sillygoals/faceid-signin-sillygoals.mp4" type="video/mp4" />
+            </video>
+          </figure>
         </div>
 
         <div class="mt-5 sm:mt-6">
