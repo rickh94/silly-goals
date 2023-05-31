@@ -20,6 +20,48 @@
     },
     "query": "INSERT INTO webauthn_credentials(id, user_id, passkey)\n        VALUES ($1, $2, $3);"
   },
+  "179e579f5d14ea74c4a9dd9547618ba0d9b3504a9ea34a9da4ce58ed7c3ad8fc": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int64"
+        },
+        {
+          "name": "userid: Uuid",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "email",
+          "ordinal": 2,
+          "type_info": "Text"
+        },
+        {
+          "name": "name",
+          "ordinal": 3,
+          "type_info": "Text"
+        },
+        {
+          "name": "is_new_user",
+          "ordinal": 4,
+          "type_info": "Bool"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false,
+        true,
+        false
+      ],
+      "parameters": {
+        "Right": 1
+      }
+    },
+    "query": "SELECT id, userid as \"userid: Uuid\", email, name, is_new_user\n        FROM users \n        WHERE userid = $1;"
+  },
   "228bb010a36f98da47232ad9a47825b76076e699552e9ff1409b6c45f59da3d6": {
     "describe": {
       "columns": [
@@ -228,6 +270,48 @@
     },
     "query": "DELETE FROM users WHERE id = $1"
   },
+  "53943b3f0e3f589ccc63ebacad31504ca699d023aa0ea7b828142ae407898fb5": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int64"
+        },
+        {
+          "name": "email",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "name",
+          "ordinal": 2,
+          "type_info": "Text"
+        },
+        {
+          "name": "userid: Uuid",
+          "ordinal": 3,
+          "type_info": "Text"
+        },
+        {
+          "name": "is_new_user",
+          "ordinal": 4,
+          "type_info": "Bool"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        true,
+        false,
+        false
+      ],
+      "parameters": {
+        "Right": 1
+      }
+    },
+    "query": "SELECT id, email, name, userid as \"userid: Uuid\", is_new_user FROM users WHERE email = $1"
+  },
   "5833443322816e52318542b1c884d5dcc843952e86a2ca7862186919219b4b75": {
     "describe": {
       "columns": [
@@ -251,6 +335,48 @@
       }
     },
     "query": "SELECT id, title FROM groups WHERE user_id = $1"
+  },
+  "5fe657fd8cc9a471a34a48042d5efcf64c9e880ec11343d1359c9d9dd4e46caf": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int64"
+        },
+        {
+          "name": "userid: Uuid",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "name",
+          "ordinal": 2,
+          "type_info": "Text"
+        },
+        {
+          "name": "email",
+          "ordinal": 3,
+          "type_info": "Text"
+        },
+        {
+          "name": "is_new_user",
+          "ordinal": 4,
+          "type_info": "Bool"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        true,
+        false,
+        false
+      ],
+      "parameters": {
+        "Right": 1
+      }
+    },
+    "query": "SELECT id, userid as \"userid: Uuid\", name, email, is_new_user\n            FROM users\n            WHERE email = Lower($1)"
   },
   "663db41f008547051d433e42101f4b6024e11f7de3cb046ae75448dd1634ae09": {
     "describe": {
@@ -300,6 +426,48 @@
     },
     "query": "SELECT * FROM goals WHERE id = $1 AND group_id = $2"
   },
+  "6f22b8ab77b21004247f8d605e54937c28f93eba17c5b14fb5a7ffc64061a2d5": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int64"
+        },
+        {
+          "name": "name",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "userid: Uuid",
+          "ordinal": 2,
+          "type_info": "Text"
+        },
+        {
+          "name": "email",
+          "ordinal": 3,
+          "type_info": "Text"
+        },
+        {
+          "name": "is_new_user",
+          "ordinal": 4,
+          "type_info": "Bool"
+        }
+      ],
+      "nullable": [
+        false,
+        true,
+        false,
+        false,
+        false
+      ],
+      "parameters": {
+        "Right": 1
+      }
+    },
+    "query": "SELECT id, name, userid as \"userid: Uuid\", email, is_new_user FROM users\n            WHERE userid = $1"
+  },
   "739aa80324806562b53118e012c677b9cb1bb331101371bd18f1f9d9062b001b": {
     "describe": {
       "columns": [
@@ -317,42 +485,6 @@
       }
     },
     "query": "INSERT INTO groups(title, description, tone_id, user_id)\n        VALUES ($1, $2, $3, $4)\n        RETURNING id;"
-  },
-  "788fb9788923e38a16af262b17ab6f976a3c4908559e0cd440f840b0f76752e4": {
-    "describe": {
-      "columns": [
-        {
-          "name": "id",
-          "ordinal": 0,
-          "type_info": "Int64"
-        },
-        {
-          "name": "userid: Uuid",
-          "ordinal": 1,
-          "type_info": "Text"
-        },
-        {
-          "name": "email",
-          "ordinal": 2,
-          "type_info": "Text"
-        },
-        {
-          "name": "name",
-          "ordinal": 3,
-          "type_info": "Text"
-        }
-      ],
-      "nullable": [
-        false,
-        false,
-        false,
-        true
-      ],
-      "parameters": {
-        "Right": 1
-      }
-    },
-    "query": "SELECT id, userid as \"userid: Uuid\", email, name \n        FROM users \n        WHERE userid = $1;"
   },
   "789f6c6300319e69151bf31532f6681e9e77e2acdaddea6cbe4dcb31a1018f92": {
     "describe": {
@@ -464,6 +596,48 @@
     },
     "query": "SELECT id as \"id: Uuid\", user_id, passkey\n        FROM webauthn_credentials\n        WHERE user_id = $1"
   },
+  "87f09e7d8381ac55bdba542699ac2d9145ead61e8df8311eb8744a5786e165be": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int64"
+        },
+        {
+          "name": "name",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "email",
+          "ordinal": 2,
+          "type_info": "Text"
+        },
+        {
+          "name": "userid: Uuid",
+          "ordinal": 3,
+          "type_info": "Text"
+        },
+        {
+          "name": "is_new_user",
+          "ordinal": 4,
+          "type_info": "Bool"
+        }
+      ],
+      "nullable": [
+        false,
+        true,
+        false,
+        false,
+        false
+      ],
+      "parameters": {
+        "Right": 1
+      }
+    },
+    "query": "SELECT id, name, email, userid as \"userid: Uuid\", is_new_user FROM users WHERE userid = $1"
+  },
   "8d81e48e8d12effde6bba88abeb184c3e62991c217a48385e7506af89287b16e": {
     "describe": {
       "columns": [
@@ -535,6 +709,48 @@
       }
     },
     "query": "SELECT \n        g.id,\n        g.title, \n        g.description, \n        g.tone_id,\n        g.user_id,\n        t.name as tone_name, \n        t.stages as \"tone_stages: Json<Vec<String>>\", \n        t.greeting, \n        t.unmet_behavior as \"unmet_behavior: GoalBehavior\", \n        t.deadline as \"deadline: DeadlineType\"\n        FROM groups g\n        LEFT JOIN tones t\n        ON g.tone_id = t.id\n        WHERE g.user_id = $1 AND g.id = $2;"
+  },
+  "94bcd18b4726222ad36a47d6f5d6abe55e675db039824efc3271c39eee0f5a47": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int64"
+        },
+        {
+          "name": "name",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "email",
+          "ordinal": 2,
+          "type_info": "Text"
+        },
+        {
+          "name": "userid: Uuid",
+          "ordinal": 3,
+          "type_info": "Text"
+        },
+        {
+          "name": "is_new_user",
+          "ordinal": 4,
+          "type_info": "Bool"
+        }
+      ],
+      "nullable": [
+        false,
+        true,
+        false,
+        false,
+        false
+      ],
+      "parameters": {
+        "Right": 1
+      }
+    },
+    "query": "SELECT id, name, email, userid as \"userid: Uuid\", is_new_user FROM users WHERE email = $1"
   },
   "973426fb8cf0455cb4abba330d9efed0ba750567a5d91c295507fe4ca016c1c7": {
     "describe": {
@@ -654,78 +870,6 @@
     },
     "query": "SELECT * FROM goals WHERE group_id = $1;"
   },
-  "a75ef0d26afa86dc1625960cf9a31fd28fda29220b69cf109fad2b933744985c": {
-    "describe": {
-      "columns": [
-        {
-          "name": "id",
-          "ordinal": 0,
-          "type_info": "Int64"
-        },
-        {
-          "name": "email",
-          "ordinal": 1,
-          "type_info": "Text"
-        },
-        {
-          "name": "name",
-          "ordinal": 2,
-          "type_info": "Text"
-        },
-        {
-          "name": "userid: Uuid",
-          "ordinal": 3,
-          "type_info": "Text"
-        }
-      ],
-      "nullable": [
-        false,
-        false,
-        true,
-        false
-      ],
-      "parameters": {
-        "Right": 1
-      }
-    },
-    "query": "SELECT id, email, name, userid as \"userid: Uuid\" FROM users WHERE email = $1"
-  },
-  "abbd845b7a3847d706c6a537f7a55a0b7e219772420ad8a0ff933a2f8824e728": {
-    "describe": {
-      "columns": [
-        {
-          "name": "id",
-          "ordinal": 0,
-          "type_info": "Int64"
-        },
-        {
-          "name": "name",
-          "ordinal": 1,
-          "type_info": "Text"
-        },
-        {
-          "name": "email",
-          "ordinal": 2,
-          "type_info": "Text"
-        },
-        {
-          "name": "userid: Uuid",
-          "ordinal": 3,
-          "type_info": "Text"
-        }
-      ],
-      "nullable": [
-        false,
-        true,
-        false,
-        false
-      ],
-      "parameters": {
-        "Right": 1
-      }
-    },
-    "query": "SELECT id, name, email, userid as \"userid: Uuid\" FROM users WHERE userid = $1"
-  },
   "c1bea28daef7c32ca79b1ba4b8e8e1f2eb2b2067fbc1ead9a087a0dc2e17b5b0": {
     "describe": {
       "columns": [],
@@ -735,6 +879,16 @@
       }
     },
     "query": "INSERT INTO users(name, email, userid)\n            VALUES ($1, $2, $3);"
+  },
+  "c2eddda33ffed59f780e524e2a0ab5cd46005989d477ca7c1a730a258ff35f24": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Right": 1
+      }
+    },
+    "query": "UPDATE users SET is_new_user = 0 WHERE id = $1;"
   },
   "c3e20b8343affa1ef949c3f31821f81e97e41661993b4d1d968c49d4fcc01f0a": {
     "describe": {
@@ -786,42 +940,6 @@
     },
     "query": "SELECT id as \"id: Uuid\", user_id, passkey \n        FROM webauthn_credentials \n        WHERE user_id = $1;"
   },
-  "e8801c90e64639ab80069ecef848b8128549a0937c8bb5333cd7702d1bb1b0a6": {
-    "describe": {
-      "columns": [
-        {
-          "name": "id",
-          "ordinal": 0,
-          "type_info": "Int64"
-        },
-        {
-          "name": "name",
-          "ordinal": 1,
-          "type_info": "Text"
-        },
-        {
-          "name": "userid: Uuid",
-          "ordinal": 2,
-          "type_info": "Text"
-        },
-        {
-          "name": "email",
-          "ordinal": 3,
-          "type_info": "Text"
-        }
-      ],
-      "nullable": [
-        false,
-        true,
-        false,
-        false
-      ],
-      "parameters": {
-        "Right": 1
-      }
-    },
-    "query": "SELECT id, name, userid as \"userid: Uuid\", email FROM users\n            WHERE userid = $1"
-  },
   "eb60e8aafa9eb665886a28d6b25b5462725a5dd3b297982c766cb1c651d9deea": {
     "describe": {
       "columns": [
@@ -840,42 +958,6 @@
     },
     "query": "SELECT id FROM tones WHERE name = $1;"
   },
-  "ec189ed7ce47da76f3954c9f2f88557d1c5069d33d1ff290a283cb7cf66c9e5f": {
-    "describe": {
-      "columns": [
-        {
-          "name": "id",
-          "ordinal": 0,
-          "type_info": "Int64"
-        },
-        {
-          "name": "userid: Uuid",
-          "ordinal": 1,
-          "type_info": "Text"
-        },
-        {
-          "name": "name",
-          "ordinal": 2,
-          "type_info": "Text"
-        },
-        {
-          "name": "email",
-          "ordinal": 3,
-          "type_info": "Text"
-        }
-      ],
-      "nullable": [
-        false,
-        false,
-        true,
-        false
-      ],
-      "parameters": {
-        "Right": 1
-      }
-    },
-    "query": "SELECT id, userid as \"userid: Uuid\", name, email\n            FROM users\n            WHERE email = Lower($1)"
-  },
   "f241bbe8fdeb1ed4811ec917f4b8a9b3a5b0ebb76ff653da591942acd96e7d5f": {
     "describe": {
       "columns": [
@@ -893,41 +975,5 @@
       }
     },
     "query": "SELECT COUNT(id)\n            FROM users\n            WHERE LOWER(email)\n            LIKE LOWER($1)"
-  },
-  "f2be5e6af6cd8992ace6ec49277af4900178ffdbe5ceabdd3dfe6c9d7aaebcda": {
-    "describe": {
-      "columns": [
-        {
-          "name": "id",
-          "ordinal": 0,
-          "type_info": "Int64"
-        },
-        {
-          "name": "name",
-          "ordinal": 1,
-          "type_info": "Text"
-        },
-        {
-          "name": "email",
-          "ordinal": 2,
-          "type_info": "Text"
-        },
-        {
-          "name": "userid: Uuid",
-          "ordinal": 3,
-          "type_info": "Text"
-        }
-      ],
-      "nullable": [
-        false,
-        true,
-        false,
-        false
-      ],
-      "parameters": {
-        "Right": 1
-      }
-    },
-    "query": "SELECT id, name, email, userid as \"userid: Uuid\" FROM users WHERE email = $1"
   }
 }
