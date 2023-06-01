@@ -1030,3 +1030,111 @@ async fn group_edit_group(
 
     Ok(HttpResponse::Ok().body(body))
 }
+
+#[get("/dashboard/help/walkthrough")]
+async fn dashboard_help_walkthrough(
+    identity: Identity,
+    pool: web::Data<SqlitePool>,
+    is_hx: IsHtmx,
+) -> actix_web::Result<HttpResponse> {
+    if *is_hx {
+        let body = DashboardWalkthroughPartial {}
+            .render()
+            .map_err(ErrorInternalServerError)?;
+        return Ok(HttpResponse::Ok()
+            .insert_header(("HX-Trigger-After-Swap", "updateLocation"))
+            .body(body));
+    }
+
+    let mut conn = pool
+        .get_ref()
+        .acquire()
+        .await
+        .map_err(ErrorInternalServerError)?;
+
+    let user = queries::get_user_from_identity(&mut conn, &identity).await?;
+
+    let groups = queries::get_group_links(&mut conn, user.id).await?;
+
+    let body = DashboardWalkthroughPage {
+        title: "Silly Goals".into(),
+        user,
+        groups,
+    }
+    .render()
+    .map_err(ErrorInternalServerError)?;
+
+    Ok(HttpResponse::Ok().body(body))
+}
+
+#[get("/dashboard/help/general")]
+async fn dashboard_help_general(
+    identity: Identity,
+    pool: web::Data<SqlitePool>,
+    is_hx: IsHtmx,
+) -> actix_web::Result<HttpResponse> {
+    if *is_hx {
+        let body = DashboardGeneralHelpPartial {}
+            .render()
+            .map_err(ErrorInternalServerError)?;
+        return Ok(HttpResponse::Ok()
+            .insert_header(("HX-Trigger-After-Swap", "updateLocation"))
+            .body(body));
+    }
+
+    let mut conn = pool
+        .get_ref()
+        .acquire()
+        .await
+        .map_err(ErrorInternalServerError)?;
+
+    let user = queries::get_user_from_identity(&mut conn, &identity).await?;
+
+    let groups = queries::get_group_links(&mut conn, user.id).await?;
+
+    let body = DashboardGeneralHelpPage {
+        title: "Silly Goals".into(),
+        user,
+        groups,
+    }
+    .render()
+    .map_err(ErrorInternalServerError)?;
+
+    Ok(HttpResponse::Ok().body(body))
+}
+
+#[get("/dashboard/help/tones")]
+async fn dashboard_help_tones(
+    identity: Identity,
+    pool: web::Data<SqlitePool>,
+    is_hx: IsHtmx,
+) -> actix_web::Result<HttpResponse> {
+    if *is_hx {
+        let body = DashboardTonesPartial {}
+            .render()
+            .map_err(ErrorInternalServerError)?;
+        return Ok(HttpResponse::Ok()
+            .insert_header(("HX-Trigger-After-Swap", "updateLocation"))
+            .body(body));
+    }
+
+    let mut conn = pool
+        .get_ref()
+        .acquire()
+        .await
+        .map_err(ErrorInternalServerError)?;
+
+    let user = queries::get_user_from_identity(&mut conn, &identity).await?;
+
+    let groups = queries::get_group_links(&mut conn, user.id).await?;
+
+    let body = DashboardTonesPage {
+        title: "Silly Goals".into(),
+        user,
+        groups,
+    }
+    .render()
+    .map_err(ErrorInternalServerError)?;
+
+    Ok(HttpResponse::Ok().body(body))
+}

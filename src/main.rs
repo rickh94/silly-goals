@@ -57,13 +57,6 @@ async fn main() -> Result<(), std::io::Error> {
 
     let db_url = dotenvy::var("DATABASE_URL").expect("DATABASE_URL must be set");
 
-    // if !Sqlite::database_exists(&db_url).await.unwrap_or(false) {
-    //     info!("Creating sqlite database");
-    //     Sqlite::create_database(&db_url)
-    //         .await
-    //         .expect("Could not create database");
-    // }
-
     let pool = SqlitePool::connect(&db_url)
         .await
         .expect("Could not connect to database");
@@ -189,6 +182,9 @@ async fn main() -> Result<(), std::io::Error> {
             .service(dashboard::post_edit_goal)
             .service(dashboard::patch_goal_tone)
             .service(dashboard::delete_goal)
+            .service(dashboard::dashboard_help_walkthrough)
+            .service(dashboard::dashboard_help_general)
+            .service(dashboard::dashboard_help_tones)
             .service(webauthn_routes::start_registration)
             .service(webauthn_routes::finish_registration)
             .service(webauthn_routes::start_login)

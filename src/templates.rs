@@ -334,3 +334,39 @@ pub struct ProfileConfirmEmailPartial {
     pub csrf_token: CsrfToken,
     pub error: Option<String>,
 }
+
+#[derive(Template)]
+#[template(path = "partials/dashboard_help_walkthrough.html")]
+pub struct DashboardWalkthroughPartial {}
+
+#[derive(Template)]
+#[template(path = "pages/dashboard_help_walkthrough.html")]
+pub struct DashboardWalkthroughPage {
+    pub title: String,
+    pub user: User,
+    pub groups: Vec<GroupLink>,
+}
+
+#[derive(Template)]
+#[template(path = "partials/dashboard_help_general.html")]
+pub struct DashboardGeneralHelpPartial {}
+
+#[derive(Template)]
+#[template(path = "pages/dashboard_help_general.html")]
+pub struct DashboardGeneralHelpPage {
+    pub title: String,
+    pub user: User,
+    pub groups: Vec<GroupLink>,
+}
+
+#[derive(Template)]
+#[template(path = "partials/dashboard_help_tones.html")]
+pub struct DashboardTonesPartial {}
+
+#[derive(Template)]
+#[template(path = "pages/dashboard_help_tones.html")]
+pub struct DashboardTonesPage {
+    pub title: String,
+    pub user: User,
+    pub groups: Vec<GroupLink>,
+}
