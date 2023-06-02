@@ -1,20 +1,20 @@
 {% extends "external.html" %}
 {% block content %}
 <div class="mx-auto max-w-7xl px-6 mt-10 lg:px-8 bg-transparent" x-data="{ videoOpen: false }">
-  <div class="relative z-40" aria-labelledby="modal-title" role="dialog" aria-modal="true" x-cloak x-show="videoOpen">
-    <div class="fixed z-40 inset-0 bg-gray-500 bg-opacity-75 transition-opacity" x-transition:enter="ease-out duration-200"
-      x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
-      x-transition:leave="ease-in duration-100" x-transition:leave-start="opacity-100"
-      x-transition:leave-end="opacity-0" x-show="videoOpen"></div>
+  <div class="relative z-50" aria-labelledby="modal-title" role="dialog" aria-modal="true" x-cloak x-show="videoOpen">
+    <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
+      x-transition:enter="ease-out duration-200" x-transition:enter-start="opacity-0"
+      x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-100"
+      x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" x-show="videoOpen" x-cloak></div>
 
-    <div class="fixed inset-0 z-40 overflow-y-auto">
-      <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0" x-cloak>
-        <div x-transition:enter="ease-out duration-200"
+    <div class="fixed inset-0 z-50 overflow-y-auto">
+      <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+        <div x-transition:enter="ease-out duration-200" x-cloak
           x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
           x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" x-transition:leave="ease-in duration-100"
           x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
           x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" x-show="videoOpen"
-          class="relative isolate transform overflow-hidden rounded-lg bg-white px-4 pb-4 pt-5 space-y-2 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:p-6">
+          class="relative transform overflow-hidden rounded-lg bg-white px-4 pb-4 pt-5 space-y-2 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:p-6">
           <div>
             <h2 class="font-bold text-2xl text-zinc-900 mb-2" id="modal-title">Walkthrough Video</h2>
             <p class="text-zinc-700 text-sm mb-4">The video below walks through the basic functions of Silly Goals.</p>
@@ -22,7 +22,8 @@
           {% include "snippets/_walkthrough_video.html" %}
 
           <div class="mt-5 sm:mt-6 flex justify-end">
-            <button @click="videoOpen = false" autofocus class="inline-flex w-auto justify-center rounded-md bg-violet-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-violet-500 sm:ml-3">Finish</a>
+            <button @click="videoOpen = false" autofocus
+              class="inline-flex w-auto justify-center rounded-md bg-violet-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-violet-500 sm:ml-3">Finish</button>
           </div>
         </div>
       </div>
