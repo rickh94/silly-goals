@@ -48,6 +48,30 @@ async fn about() -> impl Responder {
     }
 }
 
+#[derive(Template)]
+#[template(path = "sitemap.xml")]
+struct SiteMap {
+    hostname: String,
+}
+
+#[get("/sitemap.xml")]
+async fn sitemap(hostname: web::Data<String>) -> impl Responder {
+    let hostname = hostname.as_ref().clone();
+    SiteMap { hostname }
+}
+
+#[derive(Template)]
+#[template(path = "robots.txt")]
+struct RobotsTxt {
+    hostname: String,
+}
+
+#[get("/robots.txt")]
+async fn robots(hostname: web::Data<String>) -> impl Responder {
+    let hostname = hostname.as_ref().clone();
+    RobotsTxt { hostname }
+}
+
 include!(concat!(env!("OUT_DIR"), "/generated.rs"));
 
 #[actix_web::main]
@@ -150,7 +174,10 @@ async fn main() -> Result<(), std::io::Error> {
             .app_data(web::Data::new(pool.clone()))
             .service(ResourceFiles::new("/static", generated))
             .app_data(web::Data::new(mailer.clone()))
+            .app_data(web::Data::new(hostname.clone()))
             .service(about)
+            .service(sitemap)
+            .service(robots)
             .service(auth::register)
             .service(auth::post_register)
             .service(auth::finish_registration)
