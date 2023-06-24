@@ -1,7 +1,6 @@
 function dummyConfirm() {
-  alert('Should be unreachable');
+  throw new Error('should be unreachable');
 }
-
 document.addEventListener('alpine:init', () => {
   Alpine.store('location', {
     path: '',

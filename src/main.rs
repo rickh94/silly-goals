@@ -39,12 +39,22 @@ async fn index() -> impl Responder {
 #[template(path = "about.html")]
 struct AboutPage<'a> {
     pub title: &'a str,
+    pub video: bool,
 }
 
 #[get("/about")]
 async fn about() -> impl Responder {
     AboutPage {
         title: "About Silly Goals",
+        video: false,
+    }
+}
+
+#[get("/about/video")]
+async fn about_video() -> impl Responder {
+    AboutPage {
+        title: "About Silly Goals",
+        video: true,
     }
 }
 
@@ -175,9 +185,6 @@ async fn main() -> Result<(), std::io::Error> {
             .service(ResourceFiles::new("/static", generated))
             .app_data(web::Data::new(mailer.clone()))
             .app_data(web::Data::new(hostname.clone()))
-            .service(about)
-            .service(sitemap)
-            .service(robots)
             .service(auth::register)
             .service(auth::post_register)
             .service(auth::finish_registration)
@@ -216,6 +223,10 @@ async fn main() -> Result<(), std::io::Error> {
             .service(webauthn_routes::finish_registration)
             .service(webauthn_routes::start_login)
             .service(webauthn_routes::finish_login)
+            .service(about)
+            .service(about_video)
+            .service(sitemap)
+            .service(robots)
             .service(index)
     })
     .bind((bind_address, 8000))?

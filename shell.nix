@@ -2,7 +2,6 @@
 
 pkgs.mkShell {
   packages = [
-    pkgs.postgresql
     pkgs.openssl
     pkgs.pkg-config
     pkgs.clang
