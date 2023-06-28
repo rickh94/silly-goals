@@ -1,0 +1,25 @@
+{% extends "external.html" %} {% block content %}
+<div
+  class="mx-auto max-w-7xl px-6 mt-10 lg:px-8 bg-transparent"
+  x-data="{ videoOpen: false }"
+>
+  <div class="mx-auto max-w-2xl lg:text-center sm:mt-44">
+    <h2 class="text-base font-semibold leading-7 text-violet-600">Uh oh!</h2>
+    <p class="mt-2 text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
+      There's Nothing Here
+    </p>
+    <p class="mt-6 text-lg leading-8 text-gray-600 text-left">
+      The page you are looking for does not exist or has been moved.
+    </p>
+    <p class="mt-4 text-lg leading-8 text-gray-600 text-left">
+      <a
+        class="inline font-bold underline text-violet-600 hover:underline-offset-1 hover:decoration-2"
+        href="/"
+      >
+        Head back
+      </a>
+      to the homepage and hopefully you can find what you're looking for.
+    </p>
+  </div>
+</div>
+{% endblock content %}

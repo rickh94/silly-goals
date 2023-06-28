@@ -42,6 +42,12 @@ struct AboutPage<'a> {
     pub video: bool,
 }
 
+#[derive(Template)]
+#[template(path = "not_found.html")]
+struct NotFound<'a> {
+    pub title: &'a str,
+}
+
 #[get("/about")]
 async fn about() -> impl Responder {
     AboutPage {
@@ -56,6 +62,10 @@ async fn about_video() -> impl Responder {
         title: "About Silly Goals",
         video: true,
     }
+}
+
+async fn not_found() -> impl Responder {
+    NotFound { title: "Not Found" }
 }
 
 #[derive(Template)]
@@ -228,6 +238,7 @@ async fn main() -> Result<(), std::io::Error> {
             .service(sitemap)
             .service(robots)
             .service(index)
+            .default_service(web::route().to(not_found))
     })
     .bind((bind_address, 8000))?
     .run()

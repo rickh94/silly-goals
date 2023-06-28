@@ -1,11 +1,12 @@
 {
-	"scripts": {
-		"build:prod": "tailwindcss -i static-src/main.css -o static/main.css -m"
-	},
-	"dependencies": {
-		"@tailwindcss/forms": "^0.5.3",
-		"autoprefixer": "^10.4.14",
-		"postcss": "^8.4.23",
-		"tailwindcss": "^3.3.2"
-	}
+    "scripts": {
+        "build:prod": "tailwindcss -i static-src/main.css -o static/main.css -m",
+        "watch": "tailwindcss -i static-src/main.css -o static/main.css --watch"
+    },
+    "dependencies": {
+        "@tailwindcss/forms": "^0.5.3",
+        "autoprefixer": "^10.4.14",
+        "postcss": "^8.4.23",
+        "tailwindcss": "^3.3.2"
+    }
 }
