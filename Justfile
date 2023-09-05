@@ -3,7 +3,6 @@ start:
 	if [ ! -d '.pids' ]; then
 		mkdir '.pids'
 	fi
-	pg_ctl status || pg_ctl start
 	caddy run --config $CADDYFILE &
 	echo $! > .pids/caddy
 	redis-server --port $REDIS_PORT &

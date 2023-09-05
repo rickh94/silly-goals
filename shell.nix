@@ -13,7 +13,6 @@ pkgs.mkShell {
     pkgs.just
     pkgs.mkcert
     pkgs.caddy
-    pkgs.protobuf
   ];
 }
 

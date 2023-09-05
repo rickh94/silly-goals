@@ -14,3 +14,5 @@ Secrets.dev.toml
 litestream.yml
 *.db
 static/main.css
+.devenv
+.devenv.flake.nix
