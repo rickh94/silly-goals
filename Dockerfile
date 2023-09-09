@@ -9,7 +9,7 @@ RUN npm run build:prod
 
 FROM rust:1-slim-bookworm as builder2
 
-RUN apt-get update && apt-get install -y libssl-dev openssl && apt clean && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y libssl-dev openssl pkg-config 
 
 WORKDIR /app
 COPY . .
