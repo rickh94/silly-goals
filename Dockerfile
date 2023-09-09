@@ -7,7 +7,9 @@ RUN pnpm install
 COPY . .
 RUN npm run build:prod
 
-FROM rust:1 as builder2
+FROM rust:1-slim-bookworm as builder2
+
+RUN apt-get update && apt-get install -y libssl-dev openssl && apt clean && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 COPY . .
@@ -17,8 +19,9 @@ RUN --mount=type=cache,target=/usr/local/cargo/registry \
     cargo install --path .
 
 
+FROM debian:bookworm-slim
 
-FROM debian:bullseye-slim
+RUN apt-get update && apt-get install -y libssl-dev openssl && apt clean && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder2 /usr/local/cargo/bin/silly-goals /usr/local/bin/silly-goals
 
